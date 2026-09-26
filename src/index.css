@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-wa-green: #25D366;
+  --color-wa-dark: #128C7E;
+  --color-wa-light: #DCF8C6;
+  --color-sidebar: #FFFFFF;
+  --color-surface: #F8F9FB;
+  --color-card: #FFFFFF;
+  --color-border: #E8ECF0;
+  --color-muted: #94A3B8;
+  --color-text: #111827;
+  --color-text-secondary: #6B7280;
+}
+
+/* Light theme variables */
+:root {
+  --bg-base: #F8F9FB;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: #FFFFFF;
+  --bg-input: #F8F9FB;
+  --bg-hover: #F8F9FB;
+  --bg-active: #F0FDF4;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-muted: #94A3B8;
+  --border: #E8ECF0;
+  --border-hover: #25D366;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* Dark theme variables */
+html.dark {
+  --bg-base: #0F1117;
+  --bg-card: #1A1D27;
+  --bg-sidebar: #151821;
+  --bg-input: #1F2232;
+  --bg-hover: #1F2232;
+  --bg-active: rgba(37,211,102,0.12);
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border: #2A2D3E;
+  --border-hover: #25D366;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Toast animations */
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.toast-enter {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Skeleton loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f4f8 25%, #e8edf2 50%, #f0f4f8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+}
