@@ -11,8 +11,11 @@ import MediaLibrary from "./pages/MediaLibrary"
 import Organization from "./pages/Organization"
 import Agents from "./pages/Agents"
 import Settings from "./pages/Settings"
+import Login from "./pages/Login"
+import { AuthProvider } from "./context/AuthContext"
+import { ThemeProvider } from "./context/ThemeContext"
 
-const pageTitles: Record<string, { title: string subtitle?: string }> = {
+const pageTitles: Record<string, { title: string; subtitle?: string }> = {
   "/": { title: "Dashboard", subtitle: "Analytics & overview" },
   "/chat": { title: "WA Chat", subtitle: "Customer conversations" },
   "/appearance": { title: "Chat Appearance", subtitle: "Customize widget" },
@@ -21,6 +24,7 @@ const pageTitles: Record<string, { title: string subtitle?: string }> = {
   "/organization": { title: "Organization", subtitle: "Team management" },
   "/agents": { title: "Agents", subtitle: "Support agents" },
   "/settings": { title: "Settings", subtitle: "Workspace settings" },
+  "/login": { title: "Sign In", subtitle: "Access your account" },
   "/help": { title: "Help & Support", subtitle: "Get assistance" },
 }
 
@@ -59,6 +63,7 @@ function AnimatedRoutes() {
           <Route path="/organization" element={<Organization />} />
           <Route path="/agents" element={<Agents />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/login" element={<Login />} />
           <Route
             path="/help"
             element={
@@ -73,7 +78,7 @@ function AnimatedRoutes() {
                   className="text-[13.5px] mt-0.5"
                   style={{ color: "var(--text-secondary)" }}
                 >
-                  Get help with WhatsApi
+                  Get help with WhatsApi Business Suite
                 </p>
               </div>
             }
@@ -89,8 +94,12 @@ function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
 
+  const isLoginPage = location.pathname === "/login"
   const pageInfo = pageTitles[location.pathname] || { title: "WhatsApi" }
-  const isChat = location.pathname === "/chat"
+
+  if (isLoginPage) {
+    return <Login />
+  }
 
   return (
     <div
@@ -115,7 +124,7 @@ function AppShell() {
           subtitle={pageInfo.subtitle}
         />
 
-        <main className={`flex-1 flex flex-col relative`}>
+        <main className="flex-1 flex flex-col relative">
           <AnimatedRoutes />
         </main>
       </div>
@@ -125,8 +134,12 @@ function AppShell() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AppShell />
-    </BrowserRouter>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppShell />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }

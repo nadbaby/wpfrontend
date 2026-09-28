@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom"
+import { NavLink, useLocation, useNavigate } from "react-router-dom"
 import {
   LayoutDashboard,
   MessageSquare,
@@ -13,7 +13,9 @@ import {
   ChevronRight,
   Zap,
   LogOut,
+  LogIn,
 } from "lucide-react"
+import { useAuth } from "../context/AuthContext"
 
 const navItems = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -44,6 +46,14 @@ export default function Sidebar({
   onMobileClose,
 }: SidebarProps) {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, isAuthenticated, logout } = useAuth()
+
+  const handleLogout = () => {
+    logout()
+    onMobileClose()
+    navigate("/login")
+  }
 
   return (
     <>
@@ -168,6 +178,35 @@ export default function Sidebar({
               </NavLink>
             )
           })}
+
+          {/* Dedicated Login Link for easy access */}
+          <NavLink
+            to="/login"
+            onClick={onMobileClose}
+            className={`
+              relative flex items-center gap-3 mx-2 mt-2 rounded-xl
+              transition-all duration-150 group
+              ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
+              ${
+                location.pathname === "/login"
+                  ? "bg-[var(--bg-active)] text-[#25D366]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+              }
+            `}
+          >
+            <LogIn size={18} />
+            {!collapsed && (
+              <span className="text-[13.5px] font-medium">Login</span>
+            )}
+            {collapsed && (
+              <div
+                className="absolute left-full ml-3 px-2.5 py-1.5 bg-[#111827] text-white text-xs rounded-lg
+                opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-150 z-50"
+              >
+                Login
+              </div>
+            )}
+          </NavLink>
         </nav>
 
         {/* User profile */}
@@ -176,37 +215,51 @@ export default function Sidebar({
             collapsed ? "flex justify-center" : ""
           }`}
         >
-          {collapsed ? (
-            <div className="relative">
-              <img
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&auto=format"
-                alt="User"
-                className="w-9 h-9 rounded-full object-cover"
-              />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#25D366] border-2 border-[var(--bg-sidebar)]" />
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="relative flex-shrink-0">
+          {isAuthenticated && user ? (
+            collapsed ? (
+              <div className="relative group cursor-pointer" onClick={() => navigate("/settings")}>
                 <img
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&auto=format"
-                  alt="User"
-                  className="w-9 h-9 rounded-full object-cover"
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-9 h-9 rounded-full object-cover border border-[#25D366]/40"
                 />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#25D366] border-2 border-[var(--bg-sidebar)]" />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold text-[var(--text-primary)] truncate">
-                  Arjun Sharma
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="relative flex-shrink-0 cursor-pointer" onClick={() => navigate("/settings")}>
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-9 h-9 rounded-full object-cover border border-[#25D366]/40"
+                  />
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#25D366] border-2 border-[var(--bg-sidebar)]" />
                 </div>
-                <div className="text-[11px] text-[var(--text-muted)] truncate">
-                  Administrator
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate("/settings")}>
+                  <div className="text-[13px] font-semibold text-[var(--text-primary)] truncate">
+                    {user.name}
+                  </div>
+                  <div className="text-[11px] text-[var(--text-muted)] truncate">
+                    {user.role}
+                  </div>
                 </div>
+                <button
+                  onClick={handleLogout}
+                  title="Sign Out"
+                  className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                >
+                  <LogOut size={15} />
+                </button>
               </div>
-              <button className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 transition-colors">
-                <LogOut size={14} />
-              </button>
-            </div>
+            )
+          ) : (
+            <button
+              onClick={() => navigate("/login")}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-[#25D366] text-white text-xs font-semibold hover:bg-[#20bd5a] transition-colors"
+            >
+              <LogIn size={15} />
+              {!collapsed && <span>Sign In</span>}
+            </button>
           )}
         </div>
 

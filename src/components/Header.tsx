@@ -1,6 +1,8 @@
 import { useState } from "react"
-import { Search, Bell, ChevronDown, Menu, Globe, Sun, Moon } from "lucide-react"
+import { useNavigate, Link } from "react-router-dom"
+import { Search, Bell, ChevronDown, Menu, Globe, Sun, Moon, LogOut, User as UserIcon, Settings, LogIn } from "lucide-react"
 import { useTheme } from "../context/ThemeContext"
+import { useAuth } from "../context/AuthContext"
 
 interface HeaderProps {
   onMenuClick: () => void
@@ -8,10 +10,19 @@ interface HeaderProps {
   subtitle?: string
 }
 
-export default function Header({ onMenuClick, title, subtitle }: HeaderProps) {
+export default function Header({ onMenuClick, title }: HeaderProps) {
   const [searchFocused, setSearchFocused] = useState(false)
   const [showNotifs, setShowNotifs] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
   const { theme, toggle } = useTheme()
+  const { user, isAuthenticated, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    setShowUserMenu(false)
+    navigate("/login")
+  }
 
   return (
     <header className="h-[64px] bg-[var(--bg-card)] border-b border-[var(--border)] flex items-center gap-4 px-4 lg:px-6 sticky top-0 z-30 transition-colors duration-200">
@@ -65,13 +76,13 @@ export default function Header({ onMenuClick, title, subtitle }: HeaderProps) {
             theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
           }
         >
-          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          {theme === "dark" ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
         </button>
 
         {/* Notification bell */}
         <div className="relative">
           <button
-            onClick={() => setShowNotifs(!showNotifs)}
+            onClick={() => { setShowNotifs(!showNotifs); setShowUserMenu(false); }}
             className="relative p-2 rounded-xl hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
             <Bell size={18} />
@@ -135,33 +146,88 @@ export default function Header({ onMenuClick, title, subtitle }: HeaderProps) {
           <span className="text-[12px] font-medium">EN</span>
         </button>
 
-        {/* User */}
-        <button className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-[var(--bg-hover)] transition-colors ml-1">
+        {/* User profile or Login Button */}
+        {isAuthenticated && user ? (
           <div className="relative">
-            <img
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&auto=format"
-              alt="User"
-              className="w-8 h-8 rounded-full object-cover"
-            />
-            <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-[#25D366] border-[1.5px] border-[var(--bg-card)]" />
+            <button
+              onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifs(false); }}
+              className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-[var(--bg-hover)] transition-colors ml-1"
+            >
+              <div className="relative">
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-8 h-8 rounded-full object-cover border border-[#25D366]/30"
+                />
+                <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-[#25D366] border-[1.5px] border-[var(--bg-card)]" />
+              </div>
+              <div className="hidden md:block text-left">
+                <div className="text-[12.5px] font-semibold text-[var(--text-primary)] leading-tight truncate max-w-[120px]">
+                  {user.name}
+                </div>
+                <div className="text-[10.5px] text-[var(--text-muted)] truncate max-w-[120px]">
+                  {user.role}
+                </div>
+              </div>
+              <ChevronDown
+                size={13}
+                className="text-[var(--text-muted)] hidden md:block"
+              />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showUserMenu && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] shadow-xl p-2 z-50">
+                <div className="px-3 py-2 border-b border-[var(--border)] mb-1">
+                  <div className="text-xs font-bold text-[var(--text-primary)]">{user.name}</div>
+                  <div className="text-[11px] text-[var(--text-muted)] truncate">{user.email}</div>
+                </div>
+
+                <Link
+                  to="/settings"
+                  onClick={() => setShowUserMenu(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                >
+                  <UserIcon size={15} />
+                  <span>Profile Settings</span>
+                </Link>
+
+                <Link
+                  to="/settings"
+                  onClick={() => setShowUserMenu(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                >
+                  <Settings size={15} />
+                  <span>Account & Preferences</span>
+                </Link>
+
+                <div className="my-1 border-t border-[var(--border)]" />
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-red-500 hover:bg-red-500/10 transition-colors font-medium text-left"
+                >
+                  <LogOut size={15} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
           </div>
-          <div className="hidden md:block text-left">
-            <div className="text-[12.5px] font-semibold text-[var(--text-primary)] leading-tight">
-              Arjun S.
-            </div>
-            <div className="text-[10.5px] text-[var(--text-muted)]">Admin</div>
-          </div>
-          <ChevronDown
-            size={13}
-            className="text-[var(--text-muted)] hidden md:block"
-          />
-        </button>
+        ) : (
+          <Link
+            to="/login"
+            className="flex items-center gap-2 px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-semibold rounded-xl transition-all shadow-md shadow-[#25D366]/20 ml-2"
+          >
+            <LogIn size={15} />
+            <span>Sign In</span>
+          </Link>
+        )}
       </div>
 
-      {showNotifs && (
+      {(showNotifs || showUserMenu) && (
         <div
           className="fixed inset-0 z-40"
-          onClick={() => setShowNotifs(false)}
+          onClick={() => { setShowNotifs(false); setShowUserMenu(false); }}
         />
       )}
     </header>
