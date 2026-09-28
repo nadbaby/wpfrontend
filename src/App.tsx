@@ -10,6 +10,7 @@ import Templates from "./pages/Templates"
 import MediaLibrary from "./pages/MediaLibrary"
 import Organization from "./pages/Organization"
 import Agents from "./pages/Agents"
+import Broadcast from "./pages/Broadcast"
 import Settings from "./pages/Settings"
 import Login from "./pages/Login"
 import { AuthProvider } from "./context/AuthContext"
@@ -23,6 +24,7 @@ const pageTitles: Record<string, { title: string; subtitle?: string }> = {
   "/media": { title: "Media Library", subtitle: "Files & assets" },
   "/organization": { title: "Organization", subtitle: "Team management" },
   "/agents": { title: "Agents", subtitle: "Support agents" },
+  "/broadcast": { title: "Broadcast", subtitle: "Mass messaging" },
   "/settings": { title: "Settings", subtitle: "Workspace settings" },
   "/login": { title: "Sign In", subtitle: "Access your account" },
   "/help": { title: "Help & Support", subtitle: "Get assistance" },
@@ -50,9 +52,8 @@ function AnimatedRoutes() {
         animate="animate"
         exit="exit"
         variants={pageVariants}
-        className={`flex-1 ${
-          isChat ? "overflow-hidden flex flex-col h-full" : "overflow-auto"
-        }`}
+        className={`flex-1 ${isChat ? "overflow-hidden flex flex-col h-full" : "overflow-auto"
+          }`}
       >
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<Dashboard />} />
@@ -62,6 +63,7 @@ function AnimatedRoutes() {
           <Route path="/media" element={<MediaLibrary />} />
           <Route path="/organization" element={<Organization />} />
           <Route path="/agents" element={<Agents />} />
+          <Route path="/broadcast" element={<Broadcast />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/login" element={<Login />} />
           <Route

@@ -14,6 +14,7 @@ import {
   Zap,
   LogOut,
   LogIn,
+  Megaphone,
 } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 
@@ -25,6 +26,7 @@ const navItems = [
   { path: "/media", icon: Image, label: "Media Library" },
   { path: "/organization", icon: Users, label: "Organization" },
   { path: "/agents", icon: UserCheck, label: "Agents" },
+  { path: "/broadcast", icon: Megaphone, label: "Broadcast" },
 ]
 
 const bottomItems = [
@@ -75,9 +77,8 @@ export default function Sidebar({
       >
         {/* Logo */}
         <div
-          className={`flex items-center h-[64px] px-4 border-b border-[var(--border)] ${
-            collapsed ? "justify-center" : "gap-3"
-          }`}
+          className={`flex items-center h-[64px] px-4 border-b border-[var(--border)] ${collapsed ? "justify-center" : "gap-3"
+            }`}
         >
           <div className="w-9 h-9 rounded-xl bg-[#25D366] flex items-center justify-center flex-shrink-0">
             <Zap size={18} className="text-white" />
@@ -110,10 +111,9 @@ export default function Sidebar({
                   relative flex items-center gap-3 mx-2 mb-0.5 rounded-xl
                   transition-all duration-150 group
                   ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
-                  ${
-                    isActive
-                      ? "bg-[var(--bg-active)] text-[#25D366]"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                  ${isActive
+                    ? "bg-[var(--bg-active)] text-[#25D366]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                   }
                 `}
                 title={collapsed ? label : undefined}
@@ -124,9 +124,8 @@ export default function Sidebar({
                 <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                 {!collapsed && (
                   <span
-                    className={`text-[13.5px] font-medium ${
-                      isActive ? "font-semibold" : ""
-                    }`}
+                    className={`text-[13.5px] font-medium ${isActive ? "font-semibold" : ""
+                      }`}
                   >
                     {label}
                   </span>
@@ -156,10 +155,9 @@ export default function Sidebar({
                   relative flex items-center gap-3 mx-2 mb-0.5 rounded-xl
                   transition-all duration-150 group
                   ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
-                  ${
-                    isActive
-                      ? "bg-[var(--bg-active)] text-[#25D366]"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                  ${isActive
+                    ? "bg-[var(--bg-active)] text-[#25D366]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                   }
                 `}
               >
@@ -187,10 +185,9 @@ export default function Sidebar({
               relative flex items-center gap-3 mx-2 mt-2 rounded-xl
               transition-all duration-150 group
               ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
-              ${
-                location.pathname === "/login"
-                  ? "bg-[var(--bg-active)] text-[#25D366]"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+              ${location.pathname === "/login"
+                ? "bg-[var(--bg-active)] text-[#25D366]"
+                : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               }
             `}
           >
@@ -211,9 +208,8 @@ export default function Sidebar({
 
         {/* User profile */}
         <div
-          className={`p-3 border-t border-[var(--border)] ${
-            collapsed ? "flex justify-center" : ""
-          }`}
+          className={`p-3 border-t border-[var(--border)] ${collapsed ? "flex justify-center" : ""
+            }`}
         >
           {isAuthenticated && user ? (
             collapsed ? (
