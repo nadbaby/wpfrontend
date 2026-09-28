@@ -286,9 +286,8 @@ export default function Dashboard() {
                 <Icon size={18} style={{ color }} />
               </div>
               <span
-                className={`flex items-center gap-1 text-[11.5px] font-semibold ${
-                  up ? "text-emerald-500" : "text-red-500"
-                }`}
+                className={`flex items-center gap-1 text-[11.5px] font-semibold ${up ? "text-emerald-500" : "text-red-500"
+                  }`}
               >
                 {up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                 {change}
@@ -308,181 +307,6 @@ export default function Dashboard() {
             </div>
           </motion.div>
         ))}
-      </div>
-
-      {/* Main grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Greeting card */}
-        <motion.div
-          variants={item}
-          className="bg-gradient-to-br from-[#25D366] to-[#128C7E] rounded-2xl p-5 relative overflow-hidden shadow-lg shadow-[#25D366]/20"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
-            className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10 blur-xl mix-blend-overlay"
-          />
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/10 -translate-y-8 translate-x-8" />
-          <div className="absolute bottom-0 left-0 w-20 h-20 rounded-full bg-white/10 translate-y-6 -translate-x-6" />
-          <button className="absolute top-4 right-4 p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors">
-            <Settings size={14} className="text-white" />
-          </button>
-          <div className="relative">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wider mb-3">
-              Good Morning
-            </div>
-            <div className="font-display font-bold text-[26px] text-white leading-tight">
-              Hello, Genius 👋
-            </div>
-            <div className="text-white/70 text-[13px] mt-1">
-              Wednesday, September 23
-            </div>
-            <div className="mt-4 border-t border-white/20 pt-4">
-              <div className="text-white/70 text-[11px] font-semibold uppercase tracking-wider mb-2">
-                Quick Access
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {quickActions.map(({ label, sublabel, icon: Icon }) => (
-                  <button
-                    key={label}
-                    className="flex items-center gap-2 p-2.5 rounded-xl bg-white/15 hover:bg-white/25 transition-colors text-left"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-                      <Icon size={13} className="text-white" />
-                    </div>
-                    <div>
-                      <div className="text-white text-[12px] font-semibold leading-tight">
-                        {label}
-                      </div>
-                      <div className="text-white/60 text-[10px] leading-tight">
-                        {sublabel}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* WABA card */}
-        <motion.div
-          variants={item}
-          className="rounded-2xl p-5 hover:shadow-md transition-shadow"
-          style={card}
-        >
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <Shield size={18} className="text-[#25D366]" />
-                <span
-                  className="font-display font-semibold text-[15px]"
-                  style={textPrimary}
-                >
-                  Integrate WABA
-                </span>
-              </div>
-              <p
-                className="text-[12.5px] mt-1.5 leading-relaxed"
-                style={textSecondary}
-              >
-                Power your campaigns and conversations from a single official
-                account
-              </p>
-            </div>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#F0FDF4] text-[#25D366] text-[11px] font-semibold flex-shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#25D366]" />
-              Verified
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {[
-              { icon: Globe, label: "Embedded" },
-              { icon: QrCode, label: "QR Code" },
-              { icon: Smartphone, label: "Manual" },
-            ].map(({ icon: Icon, label }) => (
-              <div
-                key={label}
-                className="flex flex-col items-center gap-2 p-3 rounded-xl cursor-pointer group transition-colors"
-                style={bgInput}
-              >
-                <Icon
-                  size={18}
-                  className="text-[var(--text-muted)] group-hover:text-[#25D366] transition-colors"
-                />
-                <span
-                  className="text-[11px] text-center leading-tight"
-                  style={textSecondary}
-                >
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-          <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#22C55E] text-white text-[13.5px] font-semibold transition-all hover:shadow-lg hover:shadow-[#25D366]/30 active:scale-[0.98]">
-            <Globe size={15} />
-            Manage WABA
-          </button>
-        </motion.div>
-
-        {/* Plan card */}
-        <motion.div
-          variants={item}
-          className="rounded-2xl p-5 hover:shadow-md transition-shadow relative overflow-hidden"
-          style={card}
-        >
-          <div className="absolute right-0 top-0 w-32 h-32 bg-amber-500/5 blur-[40px] rounded-full" />
-          <div className="flex items-center gap-3 mb-4 relative z-10">
-            <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center">
-              <Crown size={20} className="text-amber-500" />
-            </div>
-            <div>
-              <div
-                className="font-display font-bold text-[16px]"
-                style={textPrimary}
-              >
-                Basic Plan
-              </div>
-              <div className="text-[12px] text-red-500 font-medium">
-                Next Renewal: 04-10-2026 (21 days)
-              </div>
-            </div>
-          </div>
-          <div className="mb-4">
-            <div
-              className="font-display font-bold text-[28px]"
-              style={textPrimary}
-            >
-              ₹7,999
-              <span className="text-[14px] font-normal" style={textSecondary}>
-                /month
-              </span>
-            </div>
-            <div className="text-[12px] mt-0.5" style={textMuted}>
-              Billed Monthly · geniusdeveloper789@gmail.com
-            </div>
-          </div>
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[12px]" style={textSecondary}>
-                Renewal in
-              </span>
-              <span className="text-[12px] font-semibold text-amber-500">
-                21 days
-              </span>
-            </div>
-            <div className="h-1.5 rounded-full overflow-hidden" style={bgInput}>
-              <div
-                className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
-                style={{ width: "29%" }}
-              />
-            </div>
-          </div>
-          <button className="relative z-10 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#111827] dark:bg-white/10 hover:bg-[#1F2937] dark:hover:bg-white/20 text-white text-[13.5px] font-semibold transition-all hover:shadow-lg active:scale-[0.98]">
-            <Crown size={15} />
-            Manage Your Plan
-          </button>
-        </motion.div>
       </div>
 
       {/* Charts row 1 */}
@@ -804,9 +628,8 @@ export default function Dashboard() {
                     className="w-9 h-9 rounded-full object-cover"
                   />
                   <span
-                    className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-card)] ${
-                      conv.online ? "bg-[#25D366]" : "bg-gray-400"
-                    }`}
+                    className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-card)] ${conv.online ? "bg-[#25D366]" : "bg-gray-400"
+                      }`}
                   />
                 </div>
                 <div className="flex-1 min-w-0">
