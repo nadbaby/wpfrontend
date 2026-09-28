@@ -8,7 +8,8 @@ import {
     Send,
     MessageSquare,
     Clock,
-    ArrowRight
+    ArrowRight,
+    Zap
 } from "lucide-react"
 
 type TargetType = 'list' | 'excel' | 'manual'
@@ -56,8 +57,8 @@ export default function Broadcast() {
                                 type="button"
                                 onClick={() => setTargetType('manual')}
                                 className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${targetType === 'manual'
-                                        ? 'border-[#25D366] bg-[#25D366]/5 text-[var(--text-primary)]'
-                                        : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[#25D366]/50'
+                                    ? 'border-[#25D366] bg-[#25D366]/5 text-[var(--text-primary)]'
+                                    : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[#25D366]/50'
                                     }`}
                             >
                                 <Phone size={24} className="mb-2" />
@@ -68,8 +69,8 @@ export default function Broadcast() {
                                 type="button"
                                 onClick={() => setTargetType('list')}
                                 className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${targetType === 'list'
-                                        ? 'border-[#25D366] bg-[#25D366]/5 text-[var(--text-primary)]'
-                                        : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[#25D366]/50'
+                                    ? 'border-[#25D366] bg-[#25D366]/5 text-[var(--text-primary)]'
+                                    : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[#25D366]/50'
                                     }`}
                             >
                                 <Users size={24} className="mb-2" />
@@ -80,8 +81,8 @@ export default function Broadcast() {
                                 type="button"
                                 onClick={() => setTargetType('excel')}
                                 className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${targetType === 'excel'
-                                        ? 'border-[#25D366] bg-[#25D366]/5 text-[var(--text-primary)]'
-                                        : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[#25D366]/50'
+                                    ? 'border-[#25D366] bg-[#25D366]/5 text-[var(--text-primary)]'
+                                    : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[#25D366]/50'
                                     }`}
                             >
                                 <FileSpreadsheet size={24} className="mb-2" />
@@ -154,8 +155,8 @@ export default function Broadcast() {
                         </h3>
                         <div className="flex gap-4">
                             <label className={`flex-1 flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${scheduleType === 'instant'
-                                    ? 'border-[#25D366] bg-[#25D366]/5'
-                                    : 'border-[var(--border)] hover:border-[#25D366]/50'
+                                ? 'border-[#25D366] bg-[#25D366]/5'
+                                : 'border-[var(--border)] hover:border-[#25D366]/50'
                                 }`}>
                                 <input
                                     type="radio"
@@ -172,8 +173,8 @@ export default function Broadcast() {
                             </label>
 
                             <label className={`flex-1 flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${scheduleType === 'scheduled'
-                                    ? 'border-[#25D366] bg-[#25D366]/5'
-                                    : 'border-[var(--border)] hover:border-[#25D366]/50'
+                                ? 'border-[#25D366] bg-[#25D366]/5'
+                                : 'border-[var(--border)] hover:border-[#25D366]/50'
                                 }`}>
                                 <input
                                     type="radio"
