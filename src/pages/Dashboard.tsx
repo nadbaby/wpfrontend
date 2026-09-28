@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { motion, Variants } from "framer-motion"
 import {
   AreaChart,
@@ -218,6 +219,7 @@ const item: Variants = {
 
 export default function Dashboard() {
   const [period, setPeriod] = useState("This Year")
+  const navigate = useNavigate()
 
   return (
     <motion.div
@@ -604,7 +606,10 @@ export default function Dashboard() {
             >
               Recent Chats
             </div>
-            <button className="text-[12px] text-[#25D366] font-semibold hover:underline">
+            <button
+              onClick={() => navigate('/chat')}
+              className="text-[12px] text-[#25D366] font-semibold hover:underline"
+            >
               View all
             </button>
           </div>
@@ -612,6 +617,7 @@ export default function Dashboard() {
             {recentConversations.map((conv) => (
               <div
                 key={conv.name}
+                onClick={() => navigate('/chat')}
                 className="flex items-center gap-3 p-2.5 rounded-xl transition-colors cursor-pointer group"
                 style={{ cursor: "pointer" }}
                 onMouseEnter={(e) =>
