@@ -192,12 +192,29 @@ export default function Broadcast() {
                         </div>
 
                         {scheduleType === 'scheduled' && (
-                            <div className="bg-[var(--bg-base)] p-4 rounded-xl border border-[var(--border)] flex items-center gap-4">
-                                <Calendar size={20} className="text-[var(--text-secondary)]" />
-                                <input
-                                    type="datetime-local"
-                                    className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#25D366]"
-                                />
+                            <div className="bg-[var(--bg-base)] p-4 rounded-xl border border-[var(--border)] grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-[var(--text-primary)] flex items-center gap-2">
+                                        <Calendar size={16} className="text-[var(--text-secondary)]" />
+                                        Select Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#25D366]"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-[var(--text-primary)] flex items-center gap-2">
+                                        <Clock size={16} className="text-[var(--text-secondary)]" />
+                                        Select Time
+                                    </label>
+                                    <input
+                                        type="time"
+                                        className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#25D366]"
+                                        required
+                                    />
+                                </div>
                             </div>
                         )}
                     </section>
