@@ -18,6 +18,7 @@ import {
   User,
   Filter,
   ArrowUp,
+  ArrowLeft,
 } from "lucide-react"
 
 const EMOJIS = [
@@ -219,6 +220,7 @@ export default function Chat() {
   const [activeFilter, setActiveFilter] = useState("All")
   const [searchQuery, setSearchQuery] = useState("")
   const [showCustomerPanel, setShowCustomerPanel] = useState(true)
+  const [mobileView, setMobileView] = useState<"list" | "chat" | "profile">("list")
   const [noteText, setNoteText] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -301,11 +303,11 @@ export default function Chat() {
 
   return (
     <div
-      className="flex h-[calc(100vh-64px)] overflow-hidden bg-[var(--bg-base)]"
+      className="flex h-[calc(100vh-64px)] overflow-hidden bg-[var(--bg-base)] w-full"
     >
       {/* Left: Conversation list */}
       <div
-        className="w-[280px] lg:w-[300px] flex-shrink-0 border-r flex flex-col bg-[var(--bg-card)] border-[var(--border)]"
+        className={`${mobileView === 'list' ? 'flex' : 'hidden'} md:flex w-full md:w-[280px] lg:w-[300px] flex-shrink-0 border-r flex-col bg-[var(--bg-card)] border-[var(--border)]`}
       >
         <div className="p-4 border-b border-[var(--border)]">
           <div className="flex items-center justify-between mb-3">
@@ -375,6 +377,7 @@ export default function Chat() {
               onClick={() => {
                 setSelectedConv(conv)
                 setMessages(initialMessages)
+                setMobileView("chat")
               }}
               className="flex items-center gap-3 px-3 py-3 border-b cursor-pointer transition-colors"
               style={{
@@ -436,10 +439,10 @@ export default function Chat() {
                 <div className="flex items-center gap-1.5 mt-1">
                   <span
                     className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${conv.status === "open"
-                        ? "bg-blue-500/10 text-blue-500"
-                        : conv.status === "pending"
-                          ? "bg-amber-500/10 text-amber-500"
-                          : "bg-[#25D366]/10 text-[#25D366]"
+                      ? "bg-blue-500/10 text-blue-500"
+                      : conv.status === "pending"
+                        ? "bg-amber-500/10 text-amber-500"
+                        : "bg-[#25D366]/10 text-[#25D366]"
                       }`}
                   >
                     {conv.status}
@@ -459,7 +462,7 @@ export default function Chat() {
 
       {/* Center: Chat */}
       <div
-        className="flex-1 flex flex-col min-w-0"
+        className={`${mobileView === 'chat' ? 'flex' : 'hidden'} md:flex flex-1 flex-col min-w-0`}
         style={{ background: "var(--bg-base)" }}
       >
         {/* Chat header */}
@@ -467,6 +470,13 @@ export default function Chat() {
           className="flex items-center gap-3 px-4 py-3 border-b"
           style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
         >
+          <button
+            onClick={() => setMobileView('list')}
+            className="md:hidden p-2 -ml-2 mr-1 rounded-xl transition-colors"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <ArrowLeft size={18} />
+          </button>
           <div className="relative">
             <img
               src={selectedConv.avatar}
@@ -511,7 +521,14 @@ export default function Chat() {
               </button>
             ))}
             <button
-              onClick={() => setShowCustomerPanel(!showCustomerPanel)}
+              onClick={() => {
+                setShowCustomerPanel(!showCustomerPanel)
+                if (!showCustomerPanel || mobileView !== 'profile') {
+                  setMobileView('profile')
+                } else {
+                  setMobileView('chat')
+                }
+              }}
               className="p-2 rounded-xl transition-colors"
               style={{
                 background: showCustomerPanel
@@ -776,18 +793,27 @@ export default function Chat() {
       {/* Right: Customer info */}
       {showCustomerPanel && (
         <div
-          className="w-[280px] flex-shrink-0 border-l flex flex-col overflow-y-auto"
+          className={`${mobileView === 'profile' ? 'flex' : 'hidden'} md:flex w-full md:w-[280px] flex-shrink-0 border-l flex-col overflow-y-auto`}
           style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
         >
           <div
             className="p-4 border-b flex items-center justify-between"
             style={{ borderColor: "var(--border)" }}
           >
-            <div
-              className="font-display font-semibold text-[14px]"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Customer Info
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setMobileView('chat')}
+                className="md:hidden p-1.5 -ml-1.5 rounded-lg transition-colors"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <ArrowLeft size={16} />
+              </button>
+              <div
+                className="font-display font-semibold text-[14px]"
+                style={{ color: "var(--text-primary)" }}
+              >
+                Customer Info
+              </div>
             </div>
             <button
               onClick={() => setShowCustomerPanel(false)}
