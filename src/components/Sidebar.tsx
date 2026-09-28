@@ -177,33 +177,57 @@ export default function Sidebar({
             )
           })}
 
-          {/* Dedicated Login Link for easy access */}
-          <NavLink
-            to="/login"
-            onClick={onMobileClose}
-            className={`
-              relative flex items-center gap-3 mx-2 mt-2 rounded-xl
-              transition-all duration-150 group
-              ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
-              ${location.pathname === "/login"
-                ? "bg-[var(--bg-active)] text-[#25D366]"
-                : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-              }
-            `}
-          >
-            <LogIn size={18} />
-            {!collapsed && (
-              <span className="text-[13.5px] font-medium">Login</span>
-            )}
-            {collapsed && (
-              <div
-                className="absolute left-full ml-3 px-2.5 py-1.5 bg-[#111827] text-white text-xs rounded-lg
-                opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-150 z-50"
-              >
-                Login
-              </div>
-            )}
-          </NavLink>
+          {/* Dedicated Login/Logout Link for easy access */}
+          {!isAuthenticated ? (
+            <NavLink
+              to="/login"
+              onClick={onMobileClose}
+              className={`
+                relative flex items-center gap-3 mx-2 mt-2 rounded-xl
+                transition-all duration-150 group
+                ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
+                ${location.pathname === "/login"
+                  ? "bg-[var(--bg-active)] text-[#25D366]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                }
+              `}
+            >
+              <LogIn size={18} />
+              {!collapsed && (
+                <span className="text-[13.5px] font-medium">Login</span>
+              )}
+              {collapsed && (
+                <div
+                  className="absolute left-full ml-3 px-2.5 py-1.5 bg-[#111827] text-white text-xs rounded-lg
+                  opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-150 z-50 text-left"
+                >
+                  Login
+                </div>
+              )}
+            </NavLink>
+          ) : (
+            <button
+              onClick={handleLogout}
+              className={`
+                w-auto relative flex items-center gap-3 mx-2 mt-2 rounded-xl
+                transition-all duration-150 group text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-400
+                ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
+              `}
+            >
+              <LogOut size={18} />
+              {!collapsed && (
+                <span className="text-[13.5px] font-medium text-left">Logout</span>
+              )}
+              {collapsed && (
+                <div
+                  className="absolute left-full ml-3 px-2.5 py-1.5 bg-[#111827] text-white text-xs rounded-lg
+                  opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-150 z-50 text-left"
+                >
+                  Logout
+                </div>
+              )}
+            </button>
+          )}
         </nav>
 
         {/* User profile */}
