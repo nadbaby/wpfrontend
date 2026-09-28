@@ -13,7 +13,7 @@ import Agents from "./pages/Agents"
 import Broadcast from "./pages/Broadcast"
 import Settings from "./pages/Settings"
 import Login from "./pages/Login"
-import { AuthProvider } from "./context/AuthContext"
+import { AuthProvider, useAuth } from "./context/AuthContext"
 import { ThemeProvider } from "./context/ThemeContext"
 
 const pageTitles: Record<string, { title: string; subtitle?: string }> = {
@@ -96,10 +96,12 @@ function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
 
+  const { isAuthenticated } = useAuth()
   const isLoginPage = location.pathname === "/login"
   const pageInfo = pageTitles[location.pathname] || { title: "WhatsApi" }
 
-  if (isLoginPage) {
+  // Restrict access globally if not authenticated
+  if (!isAuthenticated || isLoginPage) {
     return <Login />
   }
 

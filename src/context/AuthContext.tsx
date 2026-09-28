@@ -39,11 +39,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         return JSON.parse(saved)
       } catch {
-        return DEFAULT_USER
+        return null
       }
     }
-    // Default to logged in for smooth demo experience, but can log out anytime
-    return DEFAULT_USER
+    // Default to NOT logged in to enforce login page
+    return null
   })
 
   const isAuthenticated = !!user
