@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   Search,
   Plus,
@@ -221,6 +222,7 @@ export default function Chat() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showCustomerPanel, setShowCustomerPanel] = useState(true)
   const [mobileView, setMobileView] = useState<"list" | "chat" | "profile">("list")
+  const [showNewChatModal, setShowNewChatModal] = useState(false)
   const [noteText, setNoteText] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -324,7 +326,11 @@ export default function Chat() {
               >
                 <Filter size={15} />
               </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] text-white rounded-xl text-[12px] font-semibold hover:bg-[#22C55E] transition-colors">
+              <button
+                onClick={() => setShowNewChatModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] text-white rounded-xl text-[12px] font-semibold hover:bg-[#22C55E] transition-colors"
+                title="Start a new chat"
+              >
                 <Plus size={14} />
                 New
               </button>
@@ -919,6 +925,94 @@ export default function Chat() {
           </div>
         </div>
       )}
+
+      {/* New Chat Modal Overlays */}
+      <AnimatePresence>
+        {showNewChatModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowNewChatModal(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl shadow-2xl z-50 overflow-hidden"
+            >
+              <div className="p-5 border-b border-[var(--border)] flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-[var(--text-primary)]">Start New Chat</h3>
+                  <p className="text-[13px] text-[var(--text-secondary)] mt-0.5">Enter a phone number to begin</p>
+                </div>
+                <button
+                  onClick={() => setShowNewChatModal(false)}
+                  className="p-2 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-hover)] transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-6">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    setShowNewChatModal(false);
+                    alert("A new chat has been created! (Demo)");
+                  }}
+                  className="space-y-5"
+                >
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                      <Phone size={16} className="text-[var(--text-muted)]" />
+                      Phone Number
+                    </label>
+                    <div className="flex bg-[var(--bg-input)] border border-[var(--border)] rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-[#25D366]">
+                      <span className="flex items-center justify-center pl-4 pr-3 text-[var(--text-muted)] font-medium text-sm border-r border-[var(--border)]">
+                        +91
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="98765 43210"
+                        required
+                        className="flex-1 bg-transparent border-none p-3.5 text-[var(--text-primary)] text-sm outline-none font-medium"
+                      />
+                    </div>
+                    <p className="text-xs text-[var(--text-muted)] mt-1 ml-1">Make sure you include the full number.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                      <Send size={16} className="text-[var(--text-muted)]" />
+                      Initial Message
+                    </label>
+                    <textarea
+                      placeholder="Say hello..."
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-2xl p-4 text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[#25D366] resize-none h-24 font-medium"
+                    ></textarea>
+                  </div>
+                  <div className="pt-2 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowNewChatModal(false)}
+                      className="flex-1 py-3.5 bg-[var(--bg-hover)] text-[var(--text-primary)] font-bold text-[14px] rounded-xl hover:bg-[var(--border)] transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-3.5 bg-[#25D366] text-white font-bold text-[14px] rounded-xl hover:bg-[#20bd5a] shadow-[0_4px_12px_rgba(37,211,102,0.3)] transition-all hover:-translate-y-0.5 active:translate-y-0"
+                    >
+                      Open Chat
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <style>{`
         @keyframes bounce {
