@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
-import { Search, Bell, ChevronDown, Menu, Globe, Sun, Moon, LogOut, User as UserIcon, Settings, LogIn } from "lucide-react"
+import { Search, Bell, ChevronDown, Menu, Globe, Sun, Moon, LogOut, User as UserIcon, Settings, LogIn, ArrowLeft } from "lucide-react"
 import { useTheme } from "../context/ThemeContext"
 import { useAuth } from "../context/AuthContext"
 
@@ -34,6 +34,15 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
         <Menu size={20} />
       </button>
 
+      {/* Global Back button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="p-2 -ml-2 lg:ml-0 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+        title="Go Back"
+      >
+        <ArrowLeft size={20} />
+      </button>
+
       {/* Page title (mobile) */}
       <div className="lg:hidden flex-1">
         <div className="font-display font-semibold text-[15px] text-[var(--text-primary)]">
@@ -44,11 +53,10 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
       {/* Search */}
       <div
         className={`hidden lg:flex items-center gap-2.5 flex-1 max-w-[440px] h-9 px-3.5 rounded-xl border transition-all duration-150
-        ${
-          searchFocused
+        ${searchFocused
             ? "border-[#25D366] bg-[var(--bg-card)] shadow-[0_0_0_3px_rgba(37,211,102,0.1)]"
             : "border-[var(--border)] bg-[var(--bg-input)]"
-        }
+          }
       `}
       >
         <Search size={15} className="text-[var(--text-muted)] flex-shrink-0" />
@@ -117,14 +125,12 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
               ].map((n, i) => (
                 <div
                   key={i}
-                  className={`flex gap-3 px-4 py-3 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer ${
-                    !n.read ? "bg-[var(--bg-active)]" : ""
-                  }`}
+                  className={`flex gap-3 px-4 py-3 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer ${!n.read ? "bg-[var(--bg-active)]" : ""
+                    }`}
                 >
                   <div
-                    className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
-                      n.read ? "bg-transparent" : "bg-[#25D366]"
-                    }`}
+                    className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${n.read ? "bg-transparent" : "bg-[#25D366]"
+                      }`}
                   />
                   <div>
                     <div className="text-[13px] text-[var(--text-primary)] font-medium">
