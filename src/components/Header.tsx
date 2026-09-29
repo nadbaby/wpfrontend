@@ -25,7 +25,7 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
   }
 
   return (
-    <header className="h-[64px] bg-[var(--bg-card)] border-b border-[var(--border)] flex items-center gap-4 px-4 lg:px-6 sticky top-0 z-30 transition-colors duration-200">
+    <header className="min-h-[64px] bg-[var(--bg-card)] border-b border-[var(--border)] flex items-center gap-4 px-4 lg:px-6 sticky top-0 z-30 transition-colors duration-200 pt-safe">
       {/* Mobile menu button */}
       <button
         onClick={onMenuClick}

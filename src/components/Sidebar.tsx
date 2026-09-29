@@ -69,6 +69,7 @@ export default function Sidebar({
       <aside
         className={`
           fixed top-0 left-0 h-full z-50 flex flex-col
+          pt-safe pb-safe pl-safe
           bg-[var(--bg-sidebar)] border-r border-[var(--border)]
           transition-all duration-300 ease-in-out
           ${collapsed ? "w-[72px]" : "w-[240px]"}

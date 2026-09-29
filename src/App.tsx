@@ -114,7 +114,7 @@ function AppShell() {
 
   return (
     <div
-      className="flex min-h-screen"
+      className="flex min-h-screen relative"
       style={{ backgroundColor: "var(--bg-base)" }}
     >
       <Sidebar

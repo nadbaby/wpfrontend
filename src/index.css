@@ -31,7 +31,7 @@
   --text-muted: #94A3B8;
   --border: #E8ECF0;
   --border-hover: #25D366;
-  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* Dark theme variables (Amoled Black) */
@@ -41,21 +41,40 @@ html.dark {
   --bg-sidebar: #000000;
   --bg-input: #111111;
   --bg-hover: #141414;
-  --bg-active: rgba(37,211,102,0.12);
+  --bg-active: rgba(37, 211, 102, 0.12);
   --text-primary: #FFFFFF;
   --text-secondary: #A3A3A3;
   --text-muted: #525252;
   --border: #1A1A1A;
   --border-hover: #25D366;
-  --shadow: 0 4px 6px rgba(0,0,0,0.5);
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Safe area insets for mobile PWA */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 body {
@@ -88,13 +107,25 @@ body {
 
 /* Toast animations */
 @keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 .toast-enter {
@@ -103,8 +134,13 @@ body {
 
 /* Skeleton loading */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .skeleton {

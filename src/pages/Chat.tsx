@@ -449,7 +449,7 @@ export default function Chat() {
         className={`${mobileView === 'list' ? 'flex' : 'hidden'} md:flex w-full md:w-[350px] lg:w-[400px] flex-shrink-0 border-r flex-col`}
         style={{ backgroundColor: colors.bgChatPanel, borderColor: colors.border }}
       >
-        <div className="px-3 pt-3 pb-2 border-b" style={{ backgroundColor: colors.bgChatPanel, borderColor: colors.border }}>
+        <div className="px-3 pb-2 border-b" style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)', backgroundColor: colors.bgChatPanel, borderColor: colors.border }}>
           <div className="flex items-center justify-between mb-4 px-1">
             <div className="flex items-center gap-2">
               <button
@@ -515,7 +515,7 @@ export default function Chat() {
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           {filteredConvs.map((conv) => (
             <div
               key={conv.id}
@@ -585,8 +585,8 @@ export default function Chat() {
       >
         {/* Chat header */}
         <div
-          className="flex items-center gap-3 px-4 py-2.5 border-b z-10"
-          style={{ background: colors.bgHeader, borderColor: colors.border }}
+          className="flex items-center gap-3 px-4 border-b z-10"
+          style={{ paddingTop: 'max(env(safe-area-inset-top), 10px)', paddingBottom: '10px', background: colors.bgHeader, borderColor: colors.border }}
         >
           <button
             onClick={() => setMobileView('list')}
@@ -781,8 +781,8 @@ export default function Chat() {
         {/* Composer */}
         {/* Composer */}
         <div
-          className="px-4 py-3 flex items-end gap-3 z-10 relative"
-          style={{ backgroundColor: colors.bgComposer }}
+          className="px-4 pt-3 flex items-end gap-3 z-10 relative"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)', backgroundColor: colors.bgComposer }}
         >
           {/* Emoji picker */}
           {showEmoji && (
@@ -892,7 +892,7 @@ export default function Chat() {
         {/* Media Preview Overlay */}
         {mediaPreview && (
           <div className="absolute inset-0 z-[100] flex flex-col" style={{ backgroundColor: colors.bgChatPanel }}>
-            <div className="h-[60px] border-b flex items-center px-4 gap-4" style={{ borderColor: colors.border, backgroundColor: colors.bgHeader }}>
+            <div className="border-b flex items-center px-4 gap-4 min-h-[60px]" style={{ paddingTop: 'env(safe-area-inset-top)', borderColor: colors.border, backgroundColor: colors.bgHeader }}>
               <button onClick={() => setMediaPreview(null)} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: colors.textPrimary }}><X size={24} /></button>
               <div className="text-[16px] font-semibold" style={{ color: colors.textPrimary }}>Preview File</div>
             </div>
@@ -910,7 +910,7 @@ export default function Chat() {
               )}
             </div>
 
-            <div className="p-4 flex items-center justify-center border-t shadow-2xl" style={{ backgroundColor: colors.bgComposer, borderColor: colors.border }}>
+            <div className="p-4 flex items-center justify-center border-t shadow-2xl" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)', backgroundColor: colors.bgComposer, borderColor: colors.border }}>
               <div className="max-w-[700px] w-full flex justify-end">
                 <button onClick={sendMediaPreview} className="w-[50px] h-[50px] rounded-full bg-[#00a884] text-white flex flex-shrink-0 items-center justify-center hover:bg-[#00c298] transition-colors shadow-lg active:scale-95">
                   <Send size={22} className="ml-0.5" />
@@ -929,7 +929,7 @@ export default function Chat() {
         >
           <div
             className="p-4 border-b flex items-center justify-between"
-            style={{ backgroundColor: colors.bgHeader, borderColor: colors.border }}
+            style={{ paddingTop: 'max(env(safe-area-inset-top), 16px)', backgroundColor: colors.bgHeader, borderColor: colors.border }}
           >
             <div className="flex items-center gap-2">
               <button
@@ -1031,7 +1031,7 @@ export default function Chat() {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 pb-4" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}>
               <button className="w-full py-2 rounded-xl bg-[#F0FDF4] text-[#25D366] text-[13px] font-semibold hover:bg-[#DCFCE7] transition-colors">
                 Assign Agent
               </button>
