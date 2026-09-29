@@ -1,4 +1,4 @@
-import { useState } from "react"
+import React, { useState } from "react"
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
 import { AnimatePresence, motion, Variants } from "framer-motion"
 import Sidebar from "./components/Sidebar"
@@ -52,7 +52,7 @@ function AnimatedRoutes() {
         animate="animate"
         exit="exit"
         variants={pageVariants}
-        className={`flex-1 ${isChat ? "overflow-hidden flex flex-col h-full" : "overflow-auto"
+        className={`flex-1 ${isChat ? "overflow-hidden flex flex-col h-full bg-[#efeae2] dark:bg-[#0b141a]" : "overflow-auto"
           }`}
       >
         <Routes location={location} key={location.pathname}>
@@ -98,7 +98,14 @@ function AppShell() {
 
   const { isAuthenticated } = useAuth()
   const isLoginPage = location.pathname === "/login"
+  const isChatPage = location.pathname === "/chat"
   const pageInfo = pageTitles[location.pathname] || { title: "WhatsApi" }
+
+  React.useEffect(() => {
+    const handleToggle = () => setMobileOpen(true)
+    window.addEventListener('openSidebar', handleToggle)
+    return () => window.removeEventListener('openSidebar', handleToggle)
+  }, [])
 
   // Restrict access globally if not authenticated
   if (!isAuthenticated || isLoginPage) {
@@ -122,11 +129,13 @@ function AppShell() {
           ${sidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-[240px]"}
         `}
       >
-        <Header
-          onMenuClick={() => setMobileOpen(true)}
-          title={pageInfo.title}
-          subtitle={pageInfo.subtitle}
-        />
+        {!isChatPage && (
+          <Header
+            onMenuClick={() => setMobileOpen(true)}
+            title={pageInfo.title}
+            subtitle={pageInfo.subtitle}
+          />
+        )}
 
         <main className="flex-1 flex flex-col relative">
           <AnimatedRoutes />

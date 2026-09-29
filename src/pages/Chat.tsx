@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useTheme } from "../context/ThemeContext"
 import {
   Search,
   Plus,
@@ -10,7 +11,7 @@ import {
   Smile,
   Paperclip,
   Mic,
-  Image,
+  Image as ImageIcon,
   FileText,
   Check,
   CheckCheck,
@@ -20,6 +21,13 @@ import {
   Filter,
   ArrowUp,
   ArrowLeft,
+  Menu,
+  Trash2,
+  Camera,
+  UserSquare,
+  MapPin,
+  Play,
+  Pause,
 } from "lucide-react"
 
 const EMOJIS = [
@@ -58,9 +66,14 @@ const EMOJIS = [
 interface Message {
   id: number
   type: "in" | "out" | "date"
-  text: string
+  text?: string
   time: string
   status?: "sending" | "sent" | "delivered" | "read"
+  media?: {
+    type: "image" | "video" | "audio" | "document"
+    url: string
+    name?: string
+  }
 }
 
 const conversations = [
@@ -213,6 +226,29 @@ function getTime() {
 const filters = ["All", "Unread", "Assigned to me", "Groups"]
 
 export default function Chat() {
+  const { theme } = useTheme()
+  const isDark = theme === "dark"
+
+  const colors = {
+    bgApp: isDark ? "var(--bg-base)" : "#efeae2",
+    bgChatPanel: isDark ? "var(--bg-base)" : "#ffffff",
+    bgChat: isDark ? "var(--bg-base)" : "#efeae2",
+    bgHeader: isDark ? "var(--bg-card)" : "#f0f2f5",
+    border: isDark ? "var(--border)" : "#d1d7db",
+    textPrimary: isDark ? "var(--text-primary)" : "#111b21",
+    textSecondary: isDark ? "var(--text-muted)" : "#54656f",
+    bgIn: isDark ? "var(--bg-card)" : "#ffffff",
+    bgOut: isDark ? "var(--bg-hover)" : "#dcf8c6",
+    bgComposer: isDark ? "var(--bg-card)" : "#f0f2f5",
+    bgComposerInput: isDark ? "var(--bg-input)" : "#ffffff",
+    bgHover: isDark ? "var(--bg-hover)" : "#f5f6f6",
+    bgActive: isDark ? "var(--bg-input)" : "#ebebeb",
+    bgSearch: isDark ? "var(--bg-input)" : "#f0f2f5",
+    bgFilterActive: isDark ? "var(--bg-hover)" : "#dcf8c6",
+    textFilterActive: isDark ? "var(--text-primary)" : "#005c4b",
+    bgFilter: isDark ? "var(--bg-input)" : "#f0f2f5",
+  }
+
   const [selectedConv, setSelectedConv] = useState(conversations[0])
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>(initialMessages)
@@ -224,9 +260,21 @@ export default function Chat() {
   const [mobileView, setMobileView] = useState<"list" | "chat" | "profile">("list")
   const [showNewChatModal, setShowNewChatModal] = useState(false)
   const [noteText, setNoteText] = useState("")
+
+  // Media / Attachment states
+  const [showAttachMenu, setShowAttachMenu] = useState(false)
+  const [mediaPreview, setMediaPreview] = useState<{ file: File, url: string, type: "image" | "video" | "document" } | null>(null)
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingTime, setRecordingTime] = useState(0)
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const emojiRef = useRef<HTMLDivElement>(null)
+  const attachRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<BlobPart[]>([])
+  const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   let autoReplyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const filteredConvs = conversations.filter((c) =>
@@ -261,11 +309,14 @@ export default function Chat() {
     setMessages((m) => [...m, newMsg])
     setMessage("")
     setShowEmoji(false)
+    triggerAutoReply(newMsg.id)
+  }
 
+  const triggerAutoReply = (msgId: number) => {
     // Simulate sent → delivered
     setTimeout(() => {
       setMessages((m) =>
-        m.map((x) => (x.id === newMsg.id ? { ...x, status: "delivered" } : x)),
+        m.map((x) => (x.id === msgId ? { ...x, status: "delivered" } : x)),
       )
     }, 600)
 
@@ -282,11 +333,99 @@ export default function Chat() {
       }
       setMessages((m) => {
         const updated = m.map((x) =>
-          x.id === newMsg.id ? { ...x, status: "read" as const } : x,
+          x.id === msgId ? { ...x, status: "read" as const } : x,
         )
         return [...updated, reply]
       })
     }, 3000)
+  }
+
+  // --- Microphone Recording ---
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = recorder
+      audioChunksRef.current = []
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data)
+      }
+
+      recorder.onstop = () => {
+        stream.getTracks().forEach(track => track.stop())
+        if (audioChunksRef.current.length > 0) {
+          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+          const url = URL.createObjectURL(blob)
+          sendMediaMessage(url, 'audio')
+        }
+      }
+
+      recorder.start()
+      setIsRecording(true)
+      setRecordingTime(0)
+      recordingIntervalRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000)
+    } catch (err) {
+      console.error("Microphone access denied", err)
+      alert("Microphone access is required to send voice messages.")
+    }
+  }
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      audioChunksRef.current = [] // clear so onstop doesn't send
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+      if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current)
+    }
+  }
+
+  const sendRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+      if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current)
+    }
+  }
+
+  const formatRecTime = (secs: number) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0')
+    const s = (secs % 60).toString().padStart(2, '0')
+    return `${m}:${s}`
+  }
+
+  // --- Attachments ---
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const url = URL.createObjectURL(file)
+    let type: "image" | "video" | "document" = "document"
+    if (file.type.startsWith("image/")) type = "image"
+    else if (file.type.startsWith("video/")) type = "video"
+    setMediaPreview({ file, url, type })
+    setShowAttachMenu(false)
+    e.target.value = ''
+  }
+
+  const sendMediaPreview = () => {
+    if (mediaPreview) {
+      sendMediaMessage(mediaPreview.url, mediaPreview.type, mediaPreview.file.name)
+      setMediaPreview(null)
+    }
+  }
+
+  const sendMediaMessage = (url: string, type: "image" | "video" | "audio" | "document", name?: string) => {
+    const newMsg: Message = {
+      id: Date.now(),
+      type: "out",
+      text: type === 'document' ? name : undefined,
+      time: getTime(),
+      status: "sending",
+      media: { type, url, name }
+    }
+    setMessages(m => [...m, newMsg])
+    setMessage("")
+    triggerAutoReply(newMsg.id)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -304,75 +443,75 @@ export default function Chat() {
   const cardClasses = "bg-[var(--bg-card)] border-[var(--border)] border";
 
   return (
-    <div
-      className="flex h-[calc(100vh-64px)] overflow-hidden bg-[var(--bg-base)] w-full"
-    >
+    <div className="flex h-full overflow-hidden w-full relative" style={{ backgroundColor: colors.bgApp }}>
       {/* Left: Conversation list */}
       <div
-        className={`${mobileView === 'list' ? 'flex' : 'hidden'} md:flex w-full md:w-[280px] lg:w-[300px] flex-shrink-0 border-r flex-col bg-[var(--bg-card)] border-[var(--border)]`}
+        className={`${mobileView === 'list' ? 'flex' : 'hidden'} md:flex w-full md:w-[350px] lg:w-[400px] flex-shrink-0 border-r flex-col`}
+        style={{ backgroundColor: colors.bgChatPanel, borderColor: colors.border }}
       >
-        <div className="p-4 border-b border-[var(--border)]">
-          <div className="flex items-center justify-between mb-3">
-            <h2
-              className="font-display font-bold text-[16px]"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Conversations
-            </h2>
-            <div className="flex items-center gap-1">
+        <div className="px-3 pt-3 pb-2 border-b" style={{ backgroundColor: colors.bgChatPanel, borderColor: colors.border }}>
+          <div className="flex items-center justify-between mb-4 px-1">
+            <div className="flex items-center gap-2">
               <button
-                className="p-1.5 rounded-lg transition-colors"
-                style={{ color: "var(--text-secondary)" }}
+                className="md:hidden p-2 -ml-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ color: colors.textPrimary }}
+                onClick={() => window.dispatchEvent(new Event('openSidebar'))}
               >
-                <Filter size={15} />
+                <Menu size={20} />
               </button>
+              <h2
+                className="font-bold text-[22px] tracking-tight"
+                style={{ color: colors.textPrimary }}
+              >
+                Chats
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowNewChatModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] text-white rounded-xl text-[12px] font-semibold hover:bg-[#22C55E] transition-colors"
-                title="Start a new chat"
+                className="p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ color: colors.textPrimary }}
+                title="New chat"
               >
-                <Plus size={14} />
-                New
+                <Plus size={20} />
+              </button>
+              <button
+                className="p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ color: colors.textPrimary }}
+                title="Menu"
+              >
+                <MoreVertical size={20} />
               </button>
             </div>
           </div>
-          <div
-            className="flex items-center gap-2 rounded-xl px-3 h-9 border"
-            style={{
-              background: "var(--bg-input)",
-              borderColor: "var(--border)",
-            }}
-          >
-            <Search size={14} style={{ color: "var(--text-muted)" }} />
+
+          <div className="flex items-center rounded-lg px-3 h-9 transition-colors focus-within:shadow-sm" style={{ backgroundColor: colors.bgSearch }}>
+            <Search size={16} style={{ color: colors.textSecondary }} />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search conversations..."
-              className="flex-1 bg-transparent text-[13px] outline-none"
-              style={{ color: "var(--text-primary)" }}
+              placeholder="Search or start new chat"
+              className="flex-1 bg-transparent text-[14px] ml-4 outline-none placeholder:text-[14px]"
+              style={{ color: colors.textPrimary }}
             />
           </div>
-        </div>
 
-        {/* Filters */}
-        <div
-          className="flex gap-1 px-3 py-2 overflow-x-auto border-b"
-          style={{ borderColor: "var(--border)" }}
-        >
-          {filters.map((f) => (
-            <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
-              className="px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap transition-colors"
-              style={{
-                background:
-                  activeFilter === f ? "var(--bg-active)" : "transparent",
-                color: activeFilter === f ? "#25D366" : "var(--text-secondary)",
-              }}
-            >
-              {f}
-            </button>
-          ))}
+          {/* Filters */}
+          <div className="flex gap-2 mt-3 overflow-x-auto no-scrollbar pb-1">
+            {filters.map((f) => (
+              <button
+                key={f}
+                onClick={() => setActiveFilter(f)}
+                className="px-3 py-1.5 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors"
+                style={{
+                  backgroundColor: activeFilter === f ? colors.bgFilterActive : colors.bgFilter,
+                  color: activeFilter === f ? colors.textFilterActive : colors.textSecondary,
+                }}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* List */}
@@ -385,17 +524,13 @@ export default function Chat() {
                 setMessages(initialMessages)
                 setMobileView("chat")
               }}
-              className="flex items-center gap-3 px-3 py-3 border-b cursor-pointer transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors relative"
               style={{
-                borderColor: "var(--border)",
-                background:
-                  selectedConv.id === conv.id
-                    ? "var(--bg-active)"
-                    : "transparent",
+                background: selectedConv.id === conv.id ? colors.bgActive : "transparent",
               }}
               onMouseEnter={(e) => {
                 if (selectedConv.id !== conv.id)
-                  e.currentTarget.style.background = "var(--bg-hover)"
+                  e.currentTarget.style.background = colors.bgHover
               }}
               onMouseLeave={(e) => {
                 if (selectedConv.id !== conv.id)
@@ -406,59 +541,37 @@ export default function Chat() {
                 <img
                   src={conv.avatar}
                   alt={conv.name}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <span
-                  className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 ${conv.online ? "bg-[#25D366]" : "bg-gray-400"
-                    }`}
-                  style={{ borderColor: "var(--bg-card)" }}
+                  className="w-[48px] h-[48px] rounded-full object-cover"
                 />
               </div>
-              <div className="flex-1 min-w-0">
+
+              <div className="flex-1 min-w-0 pr-2 py-1 border-b" style={{ borderColor: colors.border }}>
                 <div className="flex items-center justify-between mb-0.5">
                   <span
-                    className="text-[13px] font-semibold truncate"
-                    style={{ color: "var(--text-primary)" }}
+                    className="text-[16px] font-medium truncate"
+                    style={{ color: colors.textPrimary }}
                   >
                     {conv.name}
                   </span>
                   <span
-                    className="text-[11px] flex-shrink-0 ml-1"
-                    style={{ color: "var(--text-muted)" }}
+                    className="text-[12px] flex-shrink-0 ml-2"
+                    style={{ color: conv.unread > 0 ? "#25D366" : colors.textSecondary }}
                   >
                     {conv.time}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span
-                    className="text-[12px] truncate flex-1"
-                    style={{ color: "var(--text-secondary)" }}
+                    className="text-[13.5px] truncate flex-1 leading-snug"
+                    style={{ color: colors.textSecondary, fontWeight: conv.unread > 0 ? 500 : 400 }}
                   >
                     {conv.lastMsg}
                   </span>
                   {conv.unread > 0 && (
-                    <span className="ml-1.5 flex-shrink-0 min-w-[18px] h-[18px] rounded-full bg-[#25D366] text-white text-[10px] font-bold flex items-center justify-center px-1">
+                    <span className="ml-2 flex-shrink-0 min-w-[20px] h-[20px] rounded-full bg-[#25D366] text-[var(--bg-card)] text-[11px] font-bold flex items-center justify-center px-1">
                       {conv.unread}
                     </span>
                   )}
-                </div>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span
-                    className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${conv.status === "open"
-                      ? "bg-blue-500/10 text-blue-500"
-                      : conv.status === "pending"
-                        ? "bg-amber-500/10 text-amber-500"
-                        : "bg-[#25D366]/10 text-[#25D366]"
-                      }`}
-                  >
-                    {conv.status}
-                  </span>
-                  <span
-                    className="text-[10px]"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    · {conv.agent}
-                  </span>
                 </div>
               </div>
             </div>
@@ -468,249 +581,221 @@ export default function Chat() {
 
       {/* Center: Chat */}
       <div
-        className={`${mobileView === 'chat' ? 'flex' : 'hidden'} md:flex flex-1 flex-col min-w-0`}
-        style={{ background: "var(--bg-base)" }}
+        className={`${mobileView === 'chat' ? 'flex' : 'hidden'} md:flex flex-1 flex-col min-w-0 relative`}
       >
         {/* Chat header */}
         <div
-          className="flex items-center gap-3 px-4 py-3 border-b"
-          style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
+          className="flex items-center gap-3 px-4 py-2.5 border-b z-10"
+          style={{ background: colors.bgHeader, borderColor: colors.border }}
         >
           <button
             onClick={() => setMobileView('list')}
-            className="md:hidden p-2 -ml-2 mr-1 rounded-xl transition-colors"
-            style={{ color: "var(--text-secondary)" }}
+            className="md:hidden p-2 -ml-2 mr-1 rounded-xl transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+            style={{ color: colors.textSecondary }}
           >
             <ArrowLeft size={18} />
           </button>
-          <div className="relative">
-            <img
-              src={selectedConv.avatar}
-              alt={selectedConv.name}
-              className="w-10 h-10 rounded-full object-cover"
-            />
-            <span
-              className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 ${selectedConv.online ? "bg-[#25D366]" : "bg-gray-400"
-                }`}
-              style={{ borderColor: "var(--bg-card)" }}
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div
-              className="font-semibold text-[14px]"
-              style={{ color: "var(--text-primary)" }}
-            >
-              {selectedConv.name}
+          <div
+            className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer group"
+            onClick={() => {
+              setShowCustomerPanel(true)
+              setMobileView('profile')
+            }}
+          >
+            <div className="relative">
+              <img
+                src={selectedConv.avatar}
+                alt={selectedConv.name}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+              <span
+                className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 ${selectedConv.online ? "bg-[#25D366]" : "bg-gray-400"
+                  }`}
+                style={{ borderColor: colors.bgHeader }}
+              />
             </div>
-            <div
-              className="text-[12px]"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {selectedConv.online ? "🟢 Online" : "Last seen recently"} ·{" "}
-              {selectedConv.phone}
+            <div className="flex-1 min-w-0 group-hover:opacity-80 transition-opacity">
+              <div
+                className="font-semibold text-[15px]"
+                style={{ color: colors.textPrimary }}
+              >
+                {selectedConv.name}
+              </div>
+              <div
+                className="text-[13px] truncate whitespace-nowrap"
+                style={{ color: isTyping ? "#25D366" : colors.textSecondary }}
+              >
+                {isTyping ? "typing..." : selectedConv.online ? "online" : "last seen today at 10:24 AM"}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1">
-            {[Search, Phone, Video].map((Icon, i) => (
-              <button
-                key={i}
-                className="p-2 rounded-xl transition-colors"
-                style={{ color: "var(--text-secondary)" }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "var(--bg-hover)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
-              >
-                <Icon size={16} />
-              </button>
-            ))}
             <button
-              onClick={() => {
-                setShowCustomerPanel(!showCustomerPanel)
-                if (!showCustomerPanel || mobileView !== 'profile') {
-                  setMobileView('profile')
-                } else {
-                  setMobileView('chat')
-                }
-              }}
-              className="p-2 rounded-xl transition-colors"
-              style={{
-                background: showCustomerPanel
-                  ? "var(--bg-active)"
-                  : "transparent",
-                color: showCustomerPanel ? "#25D366" : "var(--text-secondary)",
-              }}
+              className="p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+              style={{ color: colors.textSecondary }}
             >
-              <User size={16} />
-            </button>
-            <button
-              className="p-2 rounded-xl transition-colors"
-              style={{ color: "var(--text-secondary)" }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "var(--bg-hover)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "transparent")
-              }
-            >
-              <MoreVertical size={16} />
+              <MoreVertical size={20} />
             </button>
           </div>
         </div>
 
         {/* Messages */}
-        <div
-          className="flex-1 overflow-y-auto p-4 space-y-3"
-          style={{
-            background: "var(--bg-base)",
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0)",
-            backgroundSize: "24px 24px",
-          }}
-        >
-          {messages.map((msg) => {
-            if (msg.type === "date") {
+        <div className="flex-1 relative z-10" style={{ backgroundColor: colors.bgChat }}>
+          {/* Background pattern */}
+          <div
+            className="absolute inset-0 pointer-events-none z-0"
+            style={{
+              backgroundImage: isDark ? "url('https://static.whatsapp.net/rsrc.php/v3/yO/r/1ZzOesQYntu.png')" : "url('https://static.whatsapp.net/rsrc.php/v3/yl/r/r2qE66J-vDq.png')",
+              backgroundRepeat: "repeat",
+              backgroundSize: "initial",
+              backgroundPosition: "center",
+              opacity: isDark ? 0.05 : 0.4
+            }}
+          />
+
+          {/* Scrollable Messages */}
+          <div className="absolute inset-0 overflow-y-auto p-4 space-y-3 z-10">
+            {messages.map((msg) => {
+              if (msg.type === "date") {
+                return (
+                  <div key={msg.id} className="flex items-center justify-center mb-4 relative z-10">
+                    <span className="px-3 py-1 rounded-lg text-[12px] shadow-sm font-medium" style={{ backgroundColor: isDark ? "#182229" : "#ffffff", color: colors.textSecondary }}>
+                      {msg.text}
+                    </span>
+                  </div>
+                )
+              }
+              if (msg.type === "in") {
+                return (
+                  <div key={msg.id} className="flex items-end gap-2 max-w-[85%] sm:max-w-[70%] relative z-10">
+                    <div className="rounded-lg rounded-tl-none px-2 py-1.5 shadow-sm relative" style={{ backgroundColor: colors.bgIn }}>
+                      {msg.id === messages.find(m => m.type === 'in')?.id && (
+                        <div className="absolute top-0 -left-2 w-0 h-0 border-t-[10px] border-t-transparent border-l-[10px] border-l-transparent" style={{ borderTopColor: colors.bgIn }}></div>
+                      )}
+                      <span className="text-[#d81b60] text-[12.5px] font-medium block mb-0.5">{selectedConv.name}</span>
+
+                      {msg.media && msg.media.type === 'image' && (
+                        <img src={msg.media.url} className="rounded-lg max-w-full max-h-[250px] object-cover mb-1" alt="attachment" />
+                      )}
+                      {msg.media && msg.media.type === 'video' && (
+                        <video src={msg.media.url} controls className="rounded-lg max-w-full max-h-[250px] object-cover mb-1" />
+                      )}
+                      {msg.media && msg.media.type === 'audio' && (
+                        <audio src={msg.media.url} controls className="h-10 w-[240px] mb-1" />
+                      )}
+                      {msg.media && msg.media.type === 'document' && (
+                        <div className="flex items-center gap-2 p-3 bg-black/5 dark:bg-white/5 rounded-lg mb-1 cursor-pointer">
+                          <FileText size={24} className="text-[#00a884]" />
+                          <span className="text-[13px] font-medium truncate max-w-[150px]" style={{ color: colors.textPrimary }}>{msg.media.name || 'Document'}</span>
+                        </div>
+                      )}
+
+                      {msg.text && (
+                        <p className="text-[14.2px] leading-snug break-words inline-block pr-12" style={{ color: colors.textPrimary }}>
+                          {msg.text}
+                        </p>
+                      )}
+                      <span className="text-[10px] float-right mt-1 -mr-0.5 relative top-1" style={{ color: colors.textSecondary }}>
+                        {msg.time}
+                      </span>
+                    </div>
+                  </div>
+                )
+              }
               return (
-                <div key={msg.id} className="flex items-center justify-center">
-                  <span
-                    className="px-3 py-1 rounded-full text-[11px] border"
-                    style={{
-                      background: "var(--bg-card)",
-                      color: "var(--text-muted)",
-                      borderColor: "var(--border)",
-                    }}
-                  >
-                    {msg.text}
-                  </span>
-                </div>
-              )
-            }
-            if (msg.type === "in") {
-              return (
-                <div key={msg.id} className="flex items-end gap-2 max-w-[70%]">
-                  <img
-                    src={selectedConv.avatar}
-                    alt=""
-                    className="w-7 h-7 rounded-full object-cover flex-shrink-0 mb-1"
-                  />
-                  <div>
-                    <div
-                      className="rounded-2xl rounded-bl-sm px-4 py-2.5 border"
-                      style={{
-                        background: "var(--bg-card)",
-                        borderColor: "var(--border)",
-                      }}
-                    >
-                      <p
-                        className="text-[13.5px] leading-relaxed"
-                        style={{ color: "var(--text-primary)" }}
-                      >
+                <div
+                  key={msg.id}
+                  className="flex items-start justify-end gap-2 max-w-[85%] sm:max-w-[70%] ml-auto relative z-10"
+                >
+                  <div className="rounded-lg rounded-tr-none px-2 py-1.5 shadow-sm relative" style={{ backgroundColor: colors.bgOut }}>
+                    {msg.id === messages.filter(m => m.type === 'out').pop()?.id && (
+                      <div className="absolute top-0 -right-2 w-0 h-0 border-t-[10px] border-t-transparent border-r-[10px] border-r-transparent" style={{ borderTopColor: colors.bgOut }}></div>
+                    )}
+
+                    {msg.media && msg.media.type === 'image' && (
+                      <img src={msg.media.url} className="rounded-lg max-w-full max-h-[250px] object-cover mb-1" alt="attachment" />
+                    )}
+                    {msg.media && msg.media.type === 'video' && (
+                      <video src={msg.media.url} controls className="rounded-lg max-w-full max-h-[250px] object-cover mb-1" />
+                    )}
+                    {msg.media && msg.media.type === 'audio' && (
+                      <audio src={msg.media.url} controls className="h-10 w-[240px] mb-1" />
+                    )}
+                    {msg.media && msg.media.type === 'document' && (
+                      <div className="flex items-center gap-2 p-3 bg-black/5 dark:bg-white/5 rounded-lg mb-1 cursor-pointer">
+                        <FileText size={24} className="text-[#00a884]" />
+                        <span className="text-[13px] font-medium truncate max-w-[150px]" style={{ color: colors.textPrimary }}>{msg.media.name || 'Document'}</span>
+                      </div>
+                    )}
+
+                    {msg.text && (
+                      <p className="text-[14.2px] leading-snug break-words inline-block pr-16 relative z-10" style={{ color: colors.textPrimary }}>
                         {msg.text}
                       </p>
-                    </div>
-                    <div
-                      className="text-[10.5px] mt-1 ml-1"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {msg.time}
+                    )}
+
+                    <div className={`${!msg.text ? 'float-right mt-1 ml-2' : 'float-right ml-2 mt-1'} flex items-center gap-1 relative top-1 z-10`}>
+                      <span className="text-[10px]" style={{ color: colors.textSecondary }}>{msg.time}</span>
+                      {msg.status === "sending" && (
+                        <Check size={12} style={{ color: colors.textSecondary }} />
+                      )}
+                      {msg.status === "sent" && (
+                        <Check size={12} style={{ color: colors.textSecondary }} />
+                      )}
+                      {msg.status === "delivered" && (
+                        <CheckCheck size={13} style={{ color: colors.textSecondary }} />
+                      )}
+                      {msg.status === "read" && (
+                        <CheckCheck size={13} className="text-[#53bdeb]" />
+                      )}
                     </div>
                   </div>
                 </div>
               )
-            }
-            return (
-              <div
-                key={msg.id}
-                className="flex items-end gap-2 max-w-[70%] ml-auto flex-row-reverse"
-              >
-                <div>
-                  <div
-                    className="rounded-2xl rounded-br-sm px-4 py-2.5"
-                    style={{ background: "#DCF8C6" }}
-                  >
-                    <p className="text-[13.5px] leading-relaxed text-[#111827]">
-                      {msg.text}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-end gap-1 mt-1 mr-1">
-                    <span
-                      className="text-[10.5px]"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {msg.time}
-                    </span>
-                    {msg.status === "sending" && (
-                      <Check size={12} className="text-gray-400" />
-                    )}
-                    {msg.status === "sent" && (
-                      <Check size={12} className="text-gray-400" />
-                    )}
-                    {msg.status === "delivered" && (
-                      <CheckCheck size={13} className="text-gray-400" />
-                    )}
-                    {msg.status === "read" && (
-                      <CheckCheck size={13} className="text-[#25D366]" />
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+            })}
 
-          {/* Typing indicator */}
-          {isTyping && (
-            <div className="flex items-end gap-2 max-w-[70%]">
-              <img
-                src={selectedConv.avatar}
-                alt=""
-                className="w-7 h-7 rounded-full object-cover flex-shrink-0 mb-1"
-              />
-              <div
-                className="rounded-2xl rounded-bl-sm px-4 py-3 border"
-                style={{
-                  background: "var(--bg-card)",
-                  borderColor: "var(--border)",
-                }}
-              >
-                <div className="flex gap-1 items-center h-4">
-                  {[0, 1, 2].map((i) => (
-                    <span
-                      key={i}
-                      className="w-2 h-2 rounded-full bg-[#94A3B8] inline-block"
-                      style={{
-                        animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
-                      }}
-                    />
-                  ))}
+            {/* Typing indicator */}
+            {isTyping && (
+              <div className="flex items-end gap-2 max-w-[70%]">
+                <div className="rounded-lg rounded-tl-none px-4 py-3 shadow-sm relative" style={{ backgroundColor: colors.bgIn }}>
+                  <div className="absolute top-0 -left-2 w-0 h-0 border-t-[10px] border-t-transparent border-l-[10px] border-l-transparent" style={{ borderTopColor: colors.bgIn }}></div>
+                  <div className="flex gap-1 items-center h-4">
+                    {[0, 1, 2].map((i) => (
+                      <span
+                        key={i}
+                        className="w-2 h-2 rounded-full inline-block"
+                        style={{
+                          backgroundColor: colors.textSecondary,
+                          animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
+            )}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
 
         {/* Composer */}
+        {/* Composer */}
         <div
-          className="p-3 border-t relative"
-          style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
+          className="px-4 py-3 flex items-end gap-3 z-10 relative"
+          style={{ backgroundColor: colors.bgComposer }}
         >
           {/* Emoji picker */}
           {showEmoji && (
             <div
               ref={emojiRef}
-              className="absolute bottom-full left-3 mb-2 p-3 rounded-2xl border shadow-xl grid grid-cols-6 gap-1.5 z-20 w-[220px]"
-              style={{
-                background: "var(--bg-card)",
-                borderColor: "var(--border)",
-              }}
+              className="absolute bottom-[60px] left-3 mb-2 p-3 rounded-xl border shadow-xl grid grid-cols-6 gap-1.5 z-20 w-[240px]"
+              style={{ backgroundColor: colors.bgComposerInput, borderColor: colors.border }}
             >
               {EMOJIS.map((e) => (
                 <button
                   key={e}
                   onClick={() => addEmoji(e)}
-                  className="text-[20px] hover:scale-125 transition-transform leading-none p-0.5"
+                  className="text-[20px] hover:scale-125 transition-transform leading-none p-1"
                 >
                   {e}
                 </button>
@@ -718,121 +803,164 @@ export default function Chat() {
             </div>
           )}
 
-          <div className="flex items-end gap-2">
-            <div
-              className="flex-1 flex items-end gap-2 rounded-2xl px-3 py-2 border"
-              style={{
-                background: "var(--bg-input)",
-                borderColor: "var(--border)",
-              }}
-            >
-              <button
-                onClick={() => setShowEmoji(!showEmoji)}
-                className="p-1 transition-colors flex-shrink-0"
-                style={{ color: showEmoji ? "#25D366" : "var(--text-muted)" }}
-              >
-                <Smile size={20} />
+          {!isRecording && (
+            <div className="flex items-center gap-3 transition-colors relative" style={{ color: colors.textSecondary }}>
+              <button onClick={() => setShowEmoji(!showEmoji)} className="hover:text-[#00a884]">
+                <Smile size={24} className={showEmoji ? "text-[#00a884]" : ""} />
               </button>
+
+              <div className="relative" ref={attachRef}>
+                <button onClick={() => setShowAttachMenu(!showAttachMenu)} className="hover:text-[#00a884] transition-colors">
+                  <Paperclip size={24} className={showAttachMenu ? "text-[#00a884]" : ""} />
+                </button>
+                {showAttachMenu && (
+                  <div className="absolute bottom-12 left-0 mb-2 p-2 rounded-2xl shadow-xl flex flex-col gap-2 z-50 w-48 border" style={{ backgroundColor: colors.bgChatPanel, borderColor: colors.border }}>
+                    <label className="flex items-center gap-3 p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl cursor-pointer transition-colors">
+                      <span className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white"><FileText size={20} /></span>
+                      <span className="text-[14px] font-medium" style={{ color: colors.textPrimary }}>Document</span>
+                      <input type="file" className="hidden" onChange={handleFileSelect} />
+                    </label>
+                    <label className="flex items-center gap-3 p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl cursor-pointer transition-colors">
+                      <span className="w-10 h-10 rounded-full bg-pink-500 flex items-center justify-center text-white"><ImageIcon size={20} /></span>
+                      <span className="text-[14px] font-medium" style={{ color: colors.textPrimary }}>Photos & Videos</span>
+                      <input type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
+                    </label>
+                    <label className="flex items-center gap-3 p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl cursor-pointer transition-colors">
+                      <span className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white"><Camera size={20} /></span>
+                      <span className="text-[14px] font-medium" style={{ color: colors.textPrimary }}>Camera</span>
+                      <input type="file" accept="image/*,video/*" capture="environment" className="hidden" onChange={handleFileSelect} />
+                    </label>
+                    <div className="flex items-center gap-3 p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl cursor-pointer transition-colors" onClick={() => { alert('Contact selection not mock-supported'); setShowAttachMenu(false); }}>
+                      <span className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center text-white"><UserSquare size={20} /></span>
+                      <span className="text-[14px] font-medium" style={{ color: colors.textPrimary }}>Contact</span>
+                    </div>
+                    <div className="flex items-center gap-3 p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl cursor-pointer transition-colors" onClick={() => { alert('Location tracking not configured in UI demo'); setShowAttachMenu(false); }}>
+                      <span className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white"><MapPin size={20} /></span>
+                      <span className="text-[14px] font-medium" style={{ color: colors.textPrimary }}>Location</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {isRecording ? (
+            <div className="flex-1 rounded-lg px-4 py-2 shadow-sm flex items-center justify-between" style={{ backgroundColor: colors.bgComposerInput }}>
+              <button onClick={cancelRecording} className="text-red-500 hover:text-red-600 transition-colors"><Trash2 size={20} /></button>
+              <div className="flex items-center gap-2 text-red-500 font-mono text-[14px] px-4 font-bold">
+                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                {formatRecTime(recordingTime)}
+              </div>
+              <button onClick={sendRecording} className="text-[#00a884] hover:text-[#00c298] transition-colors"><Send size={20} /></button>
+            </div>
+          ) : (
+            <div className="flex-1 rounded-lg px-4 py-2 border-none shadow-sm flex items-end" style={{ backgroundColor: colors.bgComposerInput }}>
               <textarea
                 ref={inputRef}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
+                placeholder="Type a message"
                 rows={1}
-                className="flex-1 bg-transparent text-[13.5px] outline-none resize-none max-h-[120px]"
-                style={{ color: "var(--text-primary)", minHeight: "24px" }}
+                className="flex-1 bg-transparent text-[15px] outline-none resize-none max-h-[120px] pt-1 placeholder-gray-500"
+                style={{ color: colors.textPrimary, minHeight: "26px" }}
               />
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button
-                  className="p-1 transition-colors"
-                  style={{ color: "var(--text-muted)" }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = "#25D366")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "var(--text-muted)")
-                  }
-                >
-                  <Paperclip size={18} />
-                </button>
-                <button
-                  className="p-1 transition-colors"
-                  style={{ color: "var(--text-muted)" }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = "#25D366")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "var(--text-muted)")
-                  }
-                >
-                  <Image size={18} />
-                </button>
-                <button
-                  className="p-1 transition-colors"
-                  style={{ color: "var(--text-muted)" }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = "#25D366")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "var(--text-muted)")
-                  }
-                >
-                  <FileText size={18} />
+            </div>
+          )}
+
+          {!isRecording && (
+            message.trim() ? (
+              <button
+                onClick={sendMessage}
+                className="p-1.5 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ color: colors.textSecondary }}
+              >
+                <Send size={24} />
+              </button>
+            ) : (
+              <button
+                onClick={startRecording}
+                className="p-1.5 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ color: colors.textSecondary }}
+              >
+                <Mic size={24} />
+              </button>
+            )
+          )}
+        </div>
+
+        {/* Media Preview Overlay */}
+        {mediaPreview && (
+          <div className="absolute inset-0 z-[100] flex flex-col" style={{ backgroundColor: colors.bgChatPanel }}>
+            <div className="h-[60px] border-b flex items-center px-4 gap-4" style={{ borderColor: colors.border, backgroundColor: colors.bgHeader }}>
+              <button onClick={() => setMediaPreview(null)} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: colors.textPrimary }}><X size={24} /></button>
+              <div className="text-[16px] font-semibold" style={{ color: colors.textPrimary }}>Preview File</div>
+            </div>
+
+            <div className="flex-1 overflow-hidden p-8 flex items-center justify-center relative shadow-inner" style={{ backgroundColor: colors.bgApp }}>
+              {mediaPreview.type === 'document' ? (
+                <div className="flex flex-col items-center justify-center p-12 bg-black/5 dark:bg-white/5 border rounded-2xl shadow-xl gap-4 border-[var(--border)]">
+                  <FileText size={64} className="text-[#00a884]" />
+                  <span className="text-[16px] font-semibold text-center break-words max-w-[300px]" style={{ color: colors.textPrimary }}>{mediaPreview.file.name}</span>
+                </div>
+              ) : mediaPreview.type === 'video' ? (
+                <video src={mediaPreview.url} controls className="max-w-full max-h-full rounded-[4px] shadow-2xl" />
+              ) : (
+                <img src={mediaPreview.url} className="max-w-full max-h-full object-contain rounded-[4px] shadow-2xl" />
+              )}
+            </div>
+
+            <div className="p-4 flex items-center justify-center border-t shadow-2xl" style={{ backgroundColor: colors.bgComposer, borderColor: colors.border }}>
+              <div className="max-w-[700px] w-full flex justify-end">
+                <button onClick={sendMediaPreview} className="w-[50px] h-[50px] rounded-full bg-[#00a884] text-white flex flex-shrink-0 items-center justify-center hover:bg-[#00c298] transition-colors shadow-lg active:scale-95">
+                  <Send size={22} className="ml-0.5" />
                 </button>
               </div>
             </div>
-            <button
-              onClick={sendMessage}
-              className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all"
-              style={{
-                background: message.trim() ? "#25D366" : "var(--bg-input)",
-                color: message.trim() ? "white" : "var(--text-muted)",
-              }}
-            >
-              {message.trim() ? <Send size={17} /> : <Mic size={17} />}
-            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Right: Customer info */}
       {showCustomerPanel && (
         <div
-          className={`${mobileView === 'profile' ? 'flex' : 'hidden'} md:flex w-full md:w-[280px] flex-shrink-0 border-l flex-col overflow-y-auto`}
-          style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
+          className={`${mobileView === 'profile' ? 'flex absolute inset-y-0 right-0 z-30 shadow-2xl' : 'hidden'} xl:flex xl:relative xl:shadow-none w-full md:w-[320px] flex-shrink-0 border-l flex-col overflow-y-auto cursor-default`}
+          style={{ backgroundColor: colors.bgChatPanel, borderColor: colors.border }}
         >
           <div
             className="p-4 border-b flex items-center justify-between"
-            style={{ borderColor: "var(--border)" }}
+            style={{ backgroundColor: colors.bgHeader, borderColor: colors.border }}
           >
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setMobileView('chat')}
-                className="md:hidden p-1.5 -ml-1.5 rounded-lg transition-colors"
-                style={{ color: "var(--text-secondary)" }}
+                className="xl:hidden p-1.5 -ml-1.5 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ color: colors.textSecondary }}
               >
                 <ArrowLeft size={16} />
               </button>
               <div
                 className="font-display font-semibold text-[14px]"
-                style={{ color: "var(--text-primary)" }}
+                style={{ color: colors.textPrimary }}
               >
                 Customer Info
               </div>
             </div>
             <button
-              onClick={() => setShowCustomerPanel(false)}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: "var(--text-muted)" }}
+              onClick={() => {
+                setShowCustomerPanel(false)
+                setMobileView('chat')
+              }}
+              className="p-1 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+              style={{ color: colors.textSecondary }}
             >
-              <X size={14} />
+              <X size={18} />
             </button>
           </div>
 
           <div
             className="p-4 text-center border-b"
-            style={{ borderColor: "var(--border)" }}
+            style={{ borderColor: colors.border }}
           >
             <img
               src={selectedConv.avatar}
@@ -841,13 +969,13 @@ export default function Chat() {
             />
             <div
               className="font-semibold text-[15px]"
-              style={{ color: "var(--text-primary)" }}
+              style={{ color: colors.textPrimary }}
             >
               {selectedConv.name}
             </div>
             <div
               className="text-[13px] mt-0.5"
-              style={{ color: "var(--text-secondary)" }}
+              style={{ color: colors.textSecondary }}
             >
               {selectedConv.phone}
             </div>
@@ -869,13 +997,13 @@ export default function Chat() {
               <div key={label}>
                 <div
                   className="text-[11px] uppercase tracking-wider font-semibold mb-1"
-                  style={{ color: "var(--text-muted)" }}
+                  style={{ color: colors.textSecondary }}
                 >
                   {label}
                 </div>
                 <div
                   className="text-[13px] font-medium"
-                  style={{ color: "var(--text-primary)" }}
+                  style={{ color: colors.textPrimary }}
                 >
                   {value}
                 </div>
@@ -885,7 +1013,7 @@ export default function Chat() {
             <div>
               <div
                 className="text-[11px] uppercase tracking-wider font-semibold mb-2"
-                style={{ color: "var(--text-muted)" }}
+                style={{ color: colors.textSecondary }}
               >
                 Notes
               </div>
@@ -893,11 +1021,11 @@ export default function Chat() {
                 value={noteText}
                 onChange={(e) => setNoteText(e.target.value)}
                 placeholder="Add a note..."
-                className="w-full rounded-xl px-3 py-2 text-[12.5px] outline-none resize-none border transition-colors"
+                className="w-full rounded-xl px-3 py-2 text-[12.5px] outline-none resize-none border transition-colors focus-within:shadow-sm"
                 style={{
-                  background: "var(--bg-input)",
-                  color: "var(--text-primary)",
-                  borderColor: "var(--border)",
+                  backgroundColor: colors.bgComposerInput,
+                  color: colors.textPrimary,
+                  borderColor: colors.border,
                 }}
                 rows={3}
               />
