@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react"
+﻿import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import API_BASE from "../lib/api"
 import {
   Plus,
   Search,
@@ -42,7 +43,7 @@ export default function Agents() {
   const [statusFilter, setStatusFilter] = useState("All")
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/agents/all")
+    fetch(" + API_BASE + "/api/agents/all")
       .then(res => res.json())
       .then(data => {
         const dbAgents = data.map((user: any) => ({
@@ -575,3 +576,8 @@ export default function Agents() {
     </div>
   )
 }
+
+
+
+
+

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react"
+﻿import { useState, useEffect } from "react"
+import API_BASE from "../lib/api"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Plus,
@@ -40,7 +41,7 @@ export default function Organization() {
 
   const fetchOrgs = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/orgs");
+      const res = await fetch(" + API_BASE + "/api/orgs");
       if (res.ok) setOrganizations(await res.json());
     } catch (e) { }
   };
@@ -74,7 +75,7 @@ export default function Organization() {
 
   const fetchMembers = async (orgName: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/orgs/${encodeURIComponent(orgName)}/members`);
+      const res = await fetch(`${API_BASE}/api/orgs/${encodeURIComponent(orgName)}/members`);
       if (res.ok) setOrgMembers(await res.json());
     } catch (err) { }
   }
@@ -87,14 +88,14 @@ export default function Organization() {
   }
 
   const removeMember = async (email: string) => {
-    await fetch(`http://localhost:5000/api/orgs/members/${encodeURIComponent(email)}`, { method: "DELETE" });
+    await fetch(`${API_BASE}/api/orgs/members/${encodeURIComponent(email)}`, { method: "DELETE" });
     setOrgMembers(prev => prev.filter(m => m.email !== email));
     fetchOrgs();
   }
 
   const handleUpdateOrg = async () => {
     if (!selectedOrg) return;
-    await fetch(`http://localhost:5000/api/orgs/${selectedOrg.id}`, {
+    await fetch(`${API_BASE}/api/orgs/${selectedOrg.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: selectedOrg.name, features: selectedOrg.features })
@@ -104,7 +105,7 @@ export default function Organization() {
 
   const handleDeleteOrg = async (id: string) => {
     if (window.confirm("Delete this organization?")) {
-      await fetch(`http://localhost:5000/api/orgs/${id}`, { method: "DELETE" });
+      await fetch(`${API_BASE}/api/orgs/${id}`, { method: "DELETE" });
       setShowManageModal(false);
       fetchOrgs();
     }
@@ -119,7 +120,7 @@ export default function Organization() {
   const handleCreateOrg = async () => {
     if (!newOrgName.trim()) return;
     try {
-      const res = await fetch("http://localhost:5000/api/orgs", {
+      const res = await fetch(" + API_BASE + "/api/orgs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newOrgName, features: newOrgFeatures })
@@ -148,7 +149,7 @@ export default function Organization() {
     setInviteEmail("")
     setInvitePass("")
 
-    fetch("http://localhost:5000/api/agents/all")
+    fetch(" + API_BASE + "/api/agents/all")
       .then(r => r.json())
       .then(data => setAllAgents(data || []))
       .catch(e => console.error(e));
@@ -172,7 +173,7 @@ export default function Organization() {
           setErrorMsg("Please select an agent")
           return
         }
-        const res = await fetch("http://localhost:5000/api/agents/permissions", {
+        const res = await fetch(" + API_BASE + "/api/agents/permissions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ target_email: existingAgentEmail, category: selectedOrg.name, features: selectedOrg.features })
@@ -651,3 +652,8 @@ export default function Organization() {
     </div>
   )
 }
+
+
+
+
+

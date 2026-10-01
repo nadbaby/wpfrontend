@@ -1,3 +1,4 @@
+﻿import API_BASE from "../lib/api";
 import {
   createContext,
   useContext,
@@ -91,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let isAgent = false;
 
       try {
-        const profileRes = await fetch(`http://localhost:5000/api/agents/me?email=${encodeURIComponent(email)}`);
+        const profileRes = await fetch(`${API_BASE}/api/agents/me?email=${encodeURIComponent(email)}`);
         if (profileRes.ok) {
           const profileData = await profileRes.json();
           if (profileData.data?.profile) {
@@ -177,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: string = "agent"
   ): Promise<boolean> => {
     try {
-      const response = await fetch("http://localhost:5000/api/agents/provision", {
+      const response = await fetch(" + API_BASE + "/api/agents/provision", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -242,3 +243,8 @@ export function useAuth() {
   }
   return context
 }
+
+
+
+
+
