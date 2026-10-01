@@ -7,7 +7,10 @@ interface ForgotPasswordModalProps {
   onClose: () => void
 }
 
-export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProps) {
+export default function ForgotPasswordModal({
+  isOpen,
+  onClose,
+}: ForgotPasswordModalProps) {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -65,7 +68,8 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
                   Reset Password
                 </h3>
                 <p className="text-xs text-[var(--text-secondary)] mt-1 mb-6 leading-relaxed">
-                  Enter your registered work email address. We'll send you a password reset link and a WhatsApp confirmation code.
+                  Enter your registered work email address. We'll send you a
+                  password reset link and a WhatsApp confirmation code.
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -74,7 +78,10 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
                       Email Address
                     </label>
                     <div className="relative">
-                      <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                      <Mail
+                        size={16}
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+                      />
                       <input
                         type="email"
                         required
@@ -111,7 +118,11 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
                   Check your inbox!
                 </h3>
                 <p className="text-xs text-[var(--text-secondary)] mt-2 mb-6 leading-relaxed max-w-xs mx-auto">
-                  We sent a recovery link to <span className="font-medium text-[var(--text-primary)]">{email}</span>. Please check your email and WhatsApp notifications.
+                  We sent a recovery link to{" "}
+                  <span className="font-medium text-[var(--text-primary)]">
+                    {email}
+                  </span>
+                  . Please check your email and WhatsApp notifications.
                 </p>
 
                 <button

@@ -60,9 +60,15 @@ export default function Login() {
       <button
         onClick={toggle}
         className="absolute top-5 right-5 p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all shadow-xs"
-        title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        title={
+          theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"
+        }
       >
-        {theme === "dark" ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
+        {theme === "dark" ? (
+          <Sun size={18} className="text-amber-400" />
+        ) : (
+          <Moon size={18} />
+        )}
       </button>
 
       {/* Main Login Card */}
@@ -100,7 +106,10 @@ export default function Login() {
               Email Address
             </label>
             <div className="relative">
-              <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+              <Mail
+                size={16}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+              />
               <input
                 type="email"
                 required
@@ -126,7 +135,10 @@ export default function Login() {
               </button>
             </div>
             <div className="relative">
-              <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+              <Lock
+                size={16}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+              />
               <input
                 type={showPassword ? "text" : "password"}
                 required
@@ -153,7 +165,9 @@ export default function Login() {
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-3.5 h-3.5 rounded border-[var(--border)] text-[#25D366] accent-[#25D366]"
               />
-              <span className="text-xs text-[var(--text-secondary)]">Remember me</span>
+              <span className="text-xs text-[var(--text-secondary)]">
+                Remember me
+              </span>
             </label>
           </div>
 

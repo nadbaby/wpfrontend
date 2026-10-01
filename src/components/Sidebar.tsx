@@ -78,8 +78,9 @@ export default function Sidebar({
       >
         {/* Logo */}
         <div
-          className={`flex items-center h-[64px] px-4 border-b border-[var(--border)] ${collapsed ? "justify-center" : "gap-3"
-            }`}
+          className={`flex items-center h-[64px] px-4 border-b border-[var(--border)] ${
+            collapsed ? "justify-center" : "gap-3"
+          }`}
         >
           <div className="w-9 h-9 rounded-xl bg-[#25D366] flex items-center justify-center flex-shrink-0">
             <Zap size={18} className="text-white" />
@@ -112,9 +113,10 @@ export default function Sidebar({
                   relative flex items-center gap-3 mx-2 mb-0.5 rounded-xl
                   transition-all duration-150 group
                   ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
-                  ${isActive
-                    ? "bg-[var(--bg-active)] text-[#25D366]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                  ${
+                    isActive
+                      ? "bg-[var(--bg-active)] text-[#25D366]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                   }
                 `}
                 title={collapsed ? label : undefined}
@@ -125,8 +127,9 @@ export default function Sidebar({
                 <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                 {!collapsed && (
                   <span
-                    className={`text-[13.5px] font-medium ${isActive ? "font-semibold" : ""
-                      }`}
+                    className={`text-[13.5px] font-medium ${
+                      isActive ? "font-semibold" : ""
+                    }`}
                   >
                     {label}
                   </span>
@@ -156,9 +159,10 @@ export default function Sidebar({
                   relative flex items-center gap-3 mx-2 mb-0.5 rounded-xl
                   transition-all duration-150 group
                   ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
-                  ${isActive
-                    ? "bg-[var(--bg-active)] text-[#25D366]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                  ${
+                    isActive
+                      ? "bg-[var(--bg-active)] text-[#25D366]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                   }
                 `}
               >
@@ -187,9 +191,10 @@ export default function Sidebar({
                 relative flex items-center gap-3 mx-2 mt-2 rounded-xl
                 transition-all duration-150 group
                 ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
-                ${location.pathname === "/login"
-                  ? "bg-[var(--bg-active)] text-[#25D366]"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                ${
+                  location.pathname === "/login"
+                    ? "bg-[var(--bg-active)] text-[#25D366]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                 }
               `}
             >
@@ -217,7 +222,9 @@ export default function Sidebar({
             >
               <LogOut size={18} />
               {!collapsed && (
-                <span className="text-[13.5px] font-medium text-left">Logout</span>
+                <span className="text-[13.5px] font-medium text-left">
+                  Logout
+                </span>
               )}
               {collapsed && (
                 <div
@@ -233,12 +240,16 @@ export default function Sidebar({
 
         {/* User profile */}
         <div
-          className={`p-3 border-t border-[var(--border)] ${collapsed ? "flex justify-center" : ""
-            }`}
+          className={`p-3 border-t border-[var(--border)] ${
+            collapsed ? "flex justify-center" : ""
+          }`}
         >
           {isAuthenticated && user ? (
             collapsed ? (
-              <div className="relative group cursor-pointer" onClick={() => navigate("/settings")}>
+              <div
+                className="relative group cursor-pointer"
+                onClick={() => navigate("/settings")}
+              >
                 <img
                   src={user.avatar}
                   alt={user.name}
@@ -248,7 +259,10 @@ export default function Sidebar({
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <div className="relative flex-shrink-0 cursor-pointer" onClick={() => navigate("/settings")}>
+                <div
+                  className="relative flex-shrink-0 cursor-pointer"
+                  onClick={() => navigate("/settings")}
+                >
                   <img
                     src={user.avatar}
                     alt={user.name}
@@ -256,7 +270,10 @@ export default function Sidebar({
                   />
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#25D366] border-2 border-[var(--bg-sidebar)]" />
                 </div>
-                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate("/settings")}>
+                <div
+                  className="flex-1 min-w-0 cursor-pointer"
+                  onClick={() => navigate("/settings")}
+                >
                   <div className="text-[13px] font-semibold text-[var(--text-primary)] truncate">
                     {user.name}
                   </div>

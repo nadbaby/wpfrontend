@@ -1,518 +1,549 @@
 import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   Plus,
-  Search,
-  Edit,
-  Trash2,
-  MoreHorizontal,
+  Shield,
+  MessageSquare,
+  FileText,
+  Radio,
+  CalendarClock,
   UserPlus,
   X,
-  Shield,
-  ShieldCheck,
-  Crown,
-  Eye,
-  UserX,
-  ChevronDown,
   Check,
+  Building2,
+  Users,
+  Settings2,
+  Zap,
+  Trash2,
+  Save,
 } from "lucide-react"
+import { useAuth } from "../context/AuthContext"
 
-const members = [
-  {
-    id: 1,
-    name: "Arjun Sharma",
-    email: "arjun@company.com",
-    role: "Owner",
-    dept: "Management",
-    status: "active",
-    conversations: 24,
-    lastActive: "2 min ago",
-    avatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop",
-  },
-  {
-    id: 2,
-    name: "Sneha Patel",
-    email: "sneha@company.com",
-    role: "Admin",
-    dept: "Operations",
-    status: "active",
-    conversations: 18,
-    lastActive: "15 min ago",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108755-2616b612b1e0?w=40&h=40&fit=crop",
-  },
-  {
-    id: 3,
-    name: "Rahul Kumar",
-    email: "rahul@company.com",
-    role: "Agent",
-    dept: "Support",
-    status: "active",
-    conversations: 31,
-    lastActive: "1 hour ago",
-    avatar:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop",
-  },
-  {
-    id: 4,
-    name: "Priya Singh",
-    email: "priya@company.com",
-    role: "Agent",
-    dept: "Sales",
-    status: "away",
-    conversations: 12,
-    lastActive: "3 hours ago",
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop",
-  },
-  {
-    id: 5,
-    name: "Vikram Reddy",
-    email: "vikram@company.com",
-    role: "Manager",
-    dept: "Sales",
-    status: "offline",
-    conversations: 8,
-    lastActive: "1 day ago",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop",
-  },
-  {
-    id: 6,
-    name: "Meera Nair",
-    email: "meera@company.com",
-    role: "Viewer",
-    dept: "Marketing",
-    status: "invited",
-    conversations: 0,
-    lastActive: "Never",
-    avatar:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=40&h=40&fit=crop",
-  },
+interface OrgNode {
+  id: string
+  name: string
+  features: string[]
+  membersCount: number
+}
+
+const FEATURE_LIST = [
+  { id: "send-messages", label: "Send Messages", icon: MessageSquare },
+  { id: "create-template", label: "Create Templates", icon: FileText },
+  { id: "send-broadcasting", label: "Send Broadcasting", icon: Radio },
+  { id: "schedule-broadcasting", label: "Schedule Broadcasting", icon: CalendarClock },
 ]
 
-const roleColors: Record<string, string> = {
-  Owner: "bg-amber-50 text-amber-600",
-  Admin: "bg-purple-50 text-purple-600",
-  Manager: "bg-blue-50 text-blue-600",
-  Agent: "bg-[#F0FDF4] text-[#25D366]",
-  Viewer: "bg-gray-100 text-gray-500",
-}
-
-const statusColors: Record<string, string> = {
-  active: "bg-[#F0FDF4] text-[#25D366]",
-  away: "bg-amber-50 text-amber-500",
-  offline: "bg-gray-100 text-gray-500",
-  invited: "bg-blue-50 text-blue-500",
-}
-
-const statusDotColors: Record<string, string> = {
-  active: "bg-[#25D366]",
-  away: "bg-amber-400",
-  offline: "bg-gray-300",
-  invited: "bg-blue-400",
-}
-
 export default function Organization() {
-  const [search, setSearch] = useState("")
-  const [showInvite, setShowInvite] = useState(false)
+  const { adminCreateUser } = useAuth()
+
+  const [organizations, setOrganizations] = useState<OrgNode[]>([
+    { id: "org_1", name: "Sales Team", features: ["send-messages", "create-template"], membersCount: 4 },
+    { id: "org_2", name: "Marketing", features: ["send-messages", "send-broadcasting", "schedule-broadcasting"], membersCount: 2 },
+    { id: "org_3", name: "Support", features: ["send-messages"], membersCount: 5 },
+  ])
+
+  // New Org State
+  const [newOrgName, setNewOrgName] = useState("")
+  const [newOrgFeatures, setNewOrgFeatures] = useState<string[]>([])
+
+  // Modal State
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [selectedOrg, setSelectedOrg] = useState<OrgNode | null>(null)
+
+  // Agent Invite Form
   const [inviteName, setInviteName] = useState("")
   const [inviteEmail, setInviteEmail] = useState("")
-  const [inviteRole, setInviteRole] = useState("Agent")
-  const [inviteDept, setInviteDept] = useState("Support")
-  const [sent, setSent] = useState(false)
+  const [invitePass, setInvitePass] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
 
-  const filtered = members.filter(
-    (m) =>
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.email.toLowerCase().includes(search.toLowerCase()),
-  )
+  const [showManageModal, setShowManageModal] = useState(false)
+  const [manageTab, setManageTab] = useState<"members" | "permissions" | "settings">("members")
 
-  const handleInvite = () => {
-    setSent(true)
-    setTimeout(() => {
-      setSent(false)
-      setShowInvite(false)
-      setInviteName("")
-      setInviteEmail("")
-    }, 2000)
+  const openManageModal = (org: OrgNode) => {
+    setSelectedOrg(org)
+    setManageTab("members")
+    setShowManageModal(true)
   }
 
-  const stats = [
-    { label: "Total Members", value: members.length, color: "#3B82F6" },
-    {
-      label: "Active Now",
-      value: members.filter((m) => m.status === "active").length,
-      color: "#25D366",
-    },
-    {
-      label: "Away",
-      value: members.filter((m) => m.status === "away").length,
-      color: "#F59E0B",
-    },
-    {
-      label: "Pending Invites",
-      value: members.filter((m) => m.status === "invited").length,
-      color: "#8B5CF6",
-    },
-  ]
+  const toggleFeature = (featureId: string) => {
+    setNewOrgFeatures(prev =>
+      prev.includes(featureId) ? prev.filter(f => f !== featureId) : [...prev, featureId]
+    )
+  }
+
+  const handleCreateOrg = () => {
+    if (!newOrgName.trim()) return;
+    const newOrg: OrgNode = {
+      id: "org_" + Math.random().toString(36).substr(2, 6),
+      name: newOrgName,
+      features: [...newOrgFeatures],
+      membersCount: 0
+    }
+    setOrganizations([newOrg, ...organizations])
+    setNewOrgName("")
+    setNewOrgFeatures([])
+  }
+
+  const openInvite = (org: OrgNode) => {
+    setSelectedOrg(org)
+    setShowInviteModal(true)
+    setSuccess(false)
+    setErrorMsg("")
+    setInviteName("")
+    setInviteEmail("")
+    setInvitePass("")
+  }
+
+  const handleInviteAgent = async () => {
+    if (!selectedOrg) return
+    if (!inviteName || !inviteEmail || !invitePass) {
+      setErrorMsg("Please fill all fields")
+      return
+    }
+
+    try {
+      setLoading(true)
+      setErrorMsg("")
+      await adminCreateUser(inviteName, inviteEmail, invitePass, selectedOrg.name, selectedOrg.features)
+      setSuccess(true)
+
+      // Opt: Increment local UI count
+      setOrganizations(orgs => orgs.map(o => o.id === selectedOrg.id ? { ...o, membersCount: o.membersCount + 1 } : o))
+
+      setTimeout(() => {
+        setShowInviteModal(false)
+        setSuccess(false)
+      }, 2000)
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to create agent")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <div className="p-6 max-w-[1200px]">
+    <div className="p-6 md:p-8 max-w-[1400px] mx-auto min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1
-            className="font-display font-bold text-[22px]"
-            style={{ color: "var(--text-primary)" }}
-          >
-            Organization
-          </h1>
-          <p
-            className="text-[13.5px] mt-0.5"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            Manage your team members, roles and permissions
-          </p>
-        </div>
-        <button
-          onClick={() => setShowInvite(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#25D366] hover:bg-[#22C55E] text-white rounded-xl text-[13px] font-semibold transition-colors"
+      <div className="mb-8">
+        <h1 className="font-display font-extrabold text-3xl text-[var(--text-primary)] flex items-center gap-3">
+          <Building2 size={32} className="text-[#25D366]" />
+          Organizations & Permissions
+        </h1>
+        <p className="text-[var(--text-secondary)] mt-2 text-sm max-w-2xl">
+          Manage your team categories via a Bento grid. Create tailored organizations and strictly control what features their agents can access across the WhatsApp Suite.
+        </p>
+      </div>
+
+      {/* Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-min">
+
+        {/* Create Organization Bento Card - SPANS 8 COLS */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="col-span-1 md:col-span-8 bg-[var(--bg-card)] rounded-[2rem] p-8 border border-[var(--border)] shadow-xl relative overflow-hidden group"
         >
-          <UserPlus size={16} />
-          Invite Member
-        </button>
-      </div>
+          {/* Decorative Background Blur */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#25D366]/10 blur-[80px] rounded-full pointer-events-none transition-transform duration-500 group-hover:scale-110" />
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        {stats.map(({ label, value, color }) => (
-          <div
-            key={label}
-            className="rounded-2xl border p-4 flex items-center gap-3"
-            style={{
-              background: "var(--bg-card)",
-              borderColor: "var(--border)",
-            }}
-          >
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: `${color}15` }}
-            >
-              <span
-                className="font-display font-bold text-[18px]"
-                style={{ color }}
-              >
-                {value}
-              </span>
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#25D366] to-[#128C7E] flex items-center justify-center text-white shadow-lg shadow-[#25D366]/30">
+                <Shield size={20} />
+              </div>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] font-display">Create New Category</h2>
             </div>
-            <div
-              className="text-[13px] font-medium"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {label}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left side: Setup */}
+              <div className="space-y-5">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2 block">
+                    Category Name
+                  </label>
+                  <input
+                    value={newOrgName}
+                    onChange={e => setNewOrgName(e.target.value)}
+                    placeholder="e.g. Retail Sales"
+                    className="w-full h-12 px-4 rounded-2xl bg-[var(--bg-input)] border border-[var(--border)] text-sm outline-none focus:border-[#25D366] focus:ring-4 focus:ring-[#25D366]/10 transition-all font-medium text-[var(--text-primary)]"
+                  />
+                </div>
+
+                <button
+                  onClick={handleCreateOrg}
+                  disabled={!newOrgName.trim() || newOrgFeatures.length === 0}
+                  className="w-full h-12 bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white rounded-2xl font-bold shadow-lg shadow-[#25D366]/25 hover:shadow-[#25D366]/40 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 flex items-center justify-center gap-2"
+                >
+                  <Plus size={18} />
+                  Add Organization
+                </button>
+              </div>
+
+              {/* Right side: Feature Toggles */}
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3 block">
+                  Allowed Features for Agents
+                </label>
+                <div className="grid grid-cols-1 gap-3">
+                  {FEATURE_LIST.map(feat => {
+                    const isSelected = newOrgFeatures.includes(feat.id);
+                    return (
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        key={feat.id}
+                        onClick={() => toggleFeature(feat.id)}
+                        className={`flex items-center justify-between p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${isSelected
+                          ? "border-[#25D366] bg-[#25D366]/5"
+                          : "border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--text-muted)]"
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <feat.icon size={18} className={isSelected ? "text-[#25D366]" : "text-[var(--text-muted)]"} />
+                          <span className={`text-sm font-semibold ${isSelected ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
+                            {feat.label}
+                          </span>
+                        </div>
+                        <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${isSelected ? "bg-[#25D366] text-white" : "bg-[var(--bg-input)] border border-[var(--border)]"
+                          }`}>
+                          {isSelected && <Check size={14} />}
+                        </div>
+                      </motion.div>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
+        </motion.div>
+
+        {/* Global Impact Summary - SPANS 4 COLS */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="col-span-1 md:col-span-4 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[2rem] p-8 text-white shadow-xl relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+          <div className="relative z-10 h-full flex flex-col justify-between">
+            <div>
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 border border-white/20">
+                <Zap size={24} className="text-white" />
+              </div>
+              <h2 className="text-2xl font-bold font-display mb-2">Access Control</h2>
+              <p className="text-indigo-100 text-sm leading-relaxed">
+                You are utilizing edge-grade RBAC. Every agent provisioned will only access their rigorously allowed components.
+              </p>
+            </div>
+
+            <div className="mt-8 flex items-end justify-between">
+              <div>
+                <div className="text-4xl font-extrabold">{organizations.length}</div>
+                <div className="text-indigo-200 text-xs font-semibold uppercase tracking-wider mt-1">Active Categories</div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-extrabold">{organizations.reduce((acc, curr) => acc + curr.membersCount, 0)}</div>
+                <div className="text-indigo-200 text-xs font-semibold uppercase tracking-wider mt-1">Total Agents</div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Dynamic Organization Cards - Array rendering Bento items */}
+        {organizations.map((org, index) => (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.15 + (index * 0.05) }}
+            key={org.id}
+            className="col-span-1 md:col-span-4 bg-[var(--bg-card)] rounded-[2rem] border border-[var(--border)] p-6 shadow-lg hover:shadow-2xl hover:border-[#25D366]/50 transition-all duration-300 group flex flex-col"
+          >
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <h3 className="text-lg font-bold text-[var(--text-primary)] font-display truncate max-w-[180px]">{org.name}</h3>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] mt-1">
+                  <Users size={14} />
+                  <span>{org.membersCount} Agent{org.membersCount !== 1 ? 's' : ''}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => openManageModal(org)}
+                className="w-8 h-8 rounded-full bg-[var(--bg-input)] hover:bg-[var(--bg-hover)] cursor-pointer flex items-center justify-center text-[var(--text-secondary)] transition-colors"
+              >
+                <Settings2 size={16} />
+              </button>
+            </div>
+
+            <div className="flex-1 space-y-2 mb-6">
+              {org.features.map(f => {
+                const featureRef = FEATURE_LIST.find(fl => fl.id === f)
+                if (!featureRef) return null
+                return (
+                  <div key={f} className="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] bg-[var(--bg-hover)] px-3 py-1.5 rounded-xl">
+                    <featureRef.icon size={14} className="text-[#25D366]" />
+                    {featureRef.label}
+                  </div>
+                )
+              })}
+              {org.features.length === 0 && (
+                <div className="text-xs text-[var(--text-muted)] italic py-2">No features enabled</div>
+              )}
+            </div>
+
+            <button
+              onClick={() => openInvite(org)}
+              className="w-full py-3 bg-[var(--bg-input)] hover:bg-[#25D366] hover:text-white text-[var(--text-primary)] rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 group-hover:shadow-md"
+            >
+              <UserPlus size={16} />
+              Add Agent
+            </button>
+          </motion.div>
         ))}
+
       </div>
 
-      {/* Search */}
-      <div
-        className="flex items-center gap-2 rounded-xl border px-3 h-10 max-w-[360px] mb-5"
-        style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
-      >
-        <Search size={15} style={{ color: "var(--text-muted)" }} />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search team members..."
-          className="flex-1 bg-transparent text-[13px] placeholder-[#94A3B8] outline-none"
-          style={{ color: "var(--text-primary)" }}
-        />
-      </div>
-
-      {/* Table */}
-      <div
-        className="rounded-2xl border overflow-x-auto"
-        style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
-      >
-        <table className="w-full min-w-[800px]">
-          <thead>
-            <tr className="border-b" style={{ borderColor: "var(--border)" }}>
-              {[
-                "Member",
-                "Role",
-                "Department",
-                "Status",
-                "Conversations",
-                "Last Active",
-                "Actions",
-              ].map((h) => (
-                <th
-                  key={h}
-                  className="text-left px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wider"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((m) => (
-              <tr
-                key={m.id}
-                className="border-b hover:bg-[var(--bg-hover)] transition-colors"
-                style={{ borderColor: "var(--border)" }}
-              >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="relative flex-shrink-0">
-                      <img
-                        src={m.avatar}
-                        alt={m.name}
-                        className="w-9 h-9 rounded-full object-cover"
-                      />
-                      <span
-                        className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${statusDotColors[m.status]}`}
-                      />
-                    </div>
-                    <div>
-                      <div
-                        className="text-[13px] font-semibold"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        {m.name}
-                      </div>
-                      <div
-                        className="text-[11.5px]"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        {m.email}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`px-2.5 py-1 rounded-lg text-[11.5px] font-semibold ${roleColors[m.role]}`}
-                  >
-                    {m.role}
-                  </span>
-                </td>
-                <td
-                  className="px-4 py-3 text-[13px]"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {m.dept}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11.5px] font-semibold capitalize ${statusColors[m.status]}`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${statusDotColors[m.status]}`}
-                    />
-                    {m.status}
-                  </span>
-                </td>
-                <td
-                  className="px-4 py-3 text-[13px] font-semibold"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {m.conversations}
-                </td>
-                <td
-                  className="px-4 py-3 text-[12.5px]"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {m.lastActive}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-1">
-                    <button
-                      className="p-1.5 rounded-lg hover:bg-blue-50 hover:text-blue-500 transition-colors"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      <Edit size={14} />
-                    </button>
-                    <button
-                      className="p-1.5 rounded-lg hover:bg-amber-50 hover:text-amber-500 transition-colors"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      <Shield size={14} />
-                    </button>
-                    <button
-                      className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      <UserX size={14} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Invite modal */}
-      {showInvite && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div
-            className="rounded-2xl border w-full max-w-[440px] shadow-2xl"
-            style={{
-              background: "var(--bg-card)",
-              borderColor: "var(--border)",
-            }}
+      {/* Invite Modal for Admin Create User */}
+      <AnimatePresence>
+        {showInviteModal && selectedOrg && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           >
-            <div
-              className="flex items-center justify-between px-5 py-4 border-b"
-              style={{ borderColor: "var(--border)" }}
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden"
             >
-              <div>
-                <div
-                  className="font-display font-bold text-[16px]"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  Invite Team Member
-                </div>
-                <div
-                  className="text-[12px]"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Send an invitation to join your workspace
-                </div>
-              </div>
-              <button
-                onClick={() => setShowInvite(false)}
-                className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] transition-colors"
-                style={{ color: "var(--text-muted)" }}
-              >
-                <X size={15} />
-              </button>
-            </div>
-            <div className="p-5 space-y-4">
-              <div>
-                <label
-                  className="text-[12px] font-medium mb-1.5 block"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Full Name
-                </label>
-                <input
-                  value={inviteName}
-                  onChange={(e) => setInviteName(e.target.value)}
-                  placeholder="e.g. Anjali Sharma"
-                  className="w-full h-10 px-3 rounded-xl border text-[13px] outline-none focus:border-[#25D366] transition-colors"
-                  style={{
-                    borderColor: "var(--border)",
-                    background: "var(--bg-input)",
-                    color: "var(--text-primary)",
-                  }}
-                />
-              </div>
-              <div>
-                <label
-                  className="text-[12px] font-medium mb-1.5 block"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Email Address
-                </label>
-                <input
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  type="email"
-                  placeholder="e.g. anjali@company.com"
-                  className="w-full h-10 px-3 rounded-xl border text-[13px] outline-none focus:border-[#25D366] transition-colors"
-                  style={{
-                    borderColor: "var(--border)",
-                    background: "var(--bg-input)",
-                    color: "var(--text-primary)",
-                  }}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="px-6 py-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-hover)]">
                 <div>
-                  <label
-                    className="text-[12px] font-medium mb-1.5 block"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Role
-                  </label>
-                  <select
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border text-[13px] outline-none focus:border-[#25D366]"
-                    style={{
-                      borderColor: "var(--border)",
-                      background: "var(--bg-card)",
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    {["Admin", "Manager", "Agent", "Viewer"].map((r) => (
-                      <option key={r}>{r}</option>
-                    ))}
-                  </select>
+                  <h3 className="font-display font-bold text-lg text-[var(--text-primary)]">Add Agent to {selectedOrg.name}</h3>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">Provision a new account with {selectedOrg.name} permissions</p>
+                </div>
+                <button onClick={() => setShowInviteModal(false)} className="p-2 rounded-xl hover:bg-black/5 text-[var(--text-muted)]">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {errorMsg && (
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold">
+                    {errorMsg}
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 block">Agent Name</label>
+                  <input
+                    value={inviteName}
+                    onChange={e => setInviteName(e.target.value)}
+                    placeholder="John Doe"
+                    className="w-full h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] text-sm outline-none focus:border-[#25D366]"
+                  />
                 </div>
                 <div>
-                  <label
-                    className="text-[12px] font-medium mb-1.5 block"
-                    style={{ color: "var(--text-secondary)" }}
+                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 block">Login Email (ID)</label>
+                  <input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={e => setInviteEmail(e.target.value)}
+                    placeholder="john@company.com"
+                    className="w-full h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] text-sm outline-none focus:border-[#25D366]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 block">Secure Password</label>
+                  <input
+                    type="password"
+                    value={invitePass}
+                    onChange={e => setInvitePass(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] text-sm outline-none focus:border-[#25D366]"
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-[var(--border)] mt-6">
+                  <button
+                    onClick={handleInviteAgent}
+                    disabled={loading || success}
+                    className={`w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${success
+                      ? "bg-[#25D366] text-white"
+                      : "bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 text-white dark:from-white dark:to-gray-200 dark:text-black"
+                      }`}
                   >
-                    Department
-                  </label>
-                  <select
-                    value={inviteDept}
-                    onChange={(e) => setInviteDept(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border text-[13px] outline-none focus:border-[#25D366]"
-                    style={{
-                      borderColor: "var(--border)",
-                      background: "var(--bg-card)",
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    {[
-                      "Support",
-                      "Sales",
-                      "Marketing",
-                      "Operations",
-                      "Management",
-                    ].map((d) => (
-                      <option key={d}>{d}</option>
-                    ))}
-                  </select>
+                    {loading ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : success ? (
+                      <>
+                        <Check size={18} />
+                        Agent Provisioned Successfully
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus size={18} />
+                        Create Agent Account
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
-            </div>
-            <div
-              className="flex items-center justify-end gap-2 px-5 py-4 border-t"
-              style={{ borderColor: "var(--border)" }}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Manage Organization Modal */}
+      <AnimatePresence>
+        {showManageModal && selectedOrg && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
             >
-              <button
-                onClick={() => setShowInvite(false)}
-                className="px-4 py-2 rounded-xl text-[13px] font-medium hover:bg-[var(--bg-hover)] transition-colors"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleInvite}
-                disabled={!inviteEmail}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all
-                  ${
-                    sent
-                      ? "bg-emerald-500 text-white"
-                      : "bg-[#25D366] hover:bg-[#22C55E] text-white"
-                  } disabled:opacity-50`}
-              >
-                {sent ? <Check size={15} /> : <UserPlus size={15} />}
-                {sent ? "Invitation Sent!" : "Send Invitation"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="px-6 py-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-hover)]">
+                <div>
+                  <h3 className="font-display font-bold text-lg text-[var(--text-primary)]">Manage {selectedOrg.name}</h3>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">Edit team members, feature permissions, and settings</p>
+                </div>
+                <button onClick={() => setShowManageModal(false)} className="p-2 rounded-xl hover:bg-black/5 text-[var(--text-muted)]">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex border-b border-[var(--border)] px-6 pt-2 gap-6 bg-[var(--bg-hover)]">
+                {["members", "permissions", "settings"].map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setManageTab(tab as any)}
+                    className={`pb-3 text-sm font-bold capitalize transition-all border-b-2 ${manageTab === tab ? "border-[#25D366] text-[#25D366]" : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                {manageTab === "members" && (
+                  <div className="space-y-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Current Team Members</p>
+                    <div className="space-y-2">
+                      {/* Mock members since we aren't fetching directly from Express API yet */}
+                      <div className="flex items-center justify-between p-3.5 bg-[var(--bg-input)] rounded-2xl border border-[var(--border)] group">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full text-white flex items-center justify-center text-xs font-bold shadow-md">JD</div>
+                          <div>
+                            <div className="text-sm font-bold text-[var(--text-primary)]">John Doe</div>
+                            <div className="text-xs text-[var(--text-secondary)]">john@company.com</div>
+                          </div>
+                        </div>
+                        <button className="text-red-500 bg-red-500/10 p-2 rounded-xl hover:bg-red-500 text-xs transition-colors hover:text-white opacity-0 group-hover:opacity-100 font-bold border border-red-500/20 flex items-center gap-1">
+                          <Trash2 size={13} /> Remove
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3.5 bg-[var(--bg-input)] rounded-2xl border border-[var(--border)] group">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full text-white flex items-center justify-center text-xs font-bold shadow-md">AS</div>
+                          <div>
+                            <div className="text-sm font-bold text-[var(--text-primary)]">Alice Smith</div>
+                            <div className="text-xs text-[var(--text-secondary)]">alice@company.com</div>
+                          </div>
+                        </div>
+                        <button className="text-red-500 bg-red-500/10 p-2 rounded-xl hover:bg-red-500 text-xs transition-colors hover:text-white opacity-0 group-hover:opacity-100 font-bold border border-red-500/20 flex items-center gap-1">
+                          <Trash2 size={13} /> Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {manageTab === "permissions" && (
+                  <div className="space-y-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">Category Feature Access</p>
+                    <div className="grid grid-cols-1 gap-3">
+                      {FEATURE_LIST.map(feat => {
+                        const isSelected = selectedOrg.features.includes(feat.id);
+                        return (
+                          <div key={feat.id} className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isSelected ? "border-[#25D366] bg-[#25D366]/5" : "border-[var(--border)] bg-[var(--bg-input)]"}`}>
+                            <div className="flex items-center gap-3">
+                              <feat.icon size={18} className={isSelected ? "text-[#25D366]" : "text-[var(--text-muted)]"} />
+                              <span className={`text-sm font-semibold ${isSelected ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
+                                {feat.label}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                // Live update the orgs features locally
+                                setOrganizations(orgs => orgs.map(o => {
+                                  if (o.id === selectedOrg.id) {
+                                    const newF = isSelected ? o.features.filter(fid => fid !== feat.id) : [...o.features, feat.id];
+                                    return { ...o, features: newF }
+                                  }
+                                  return o;
+                                }))
+                                // Update selected locally
+                                setSelectedOrg(prev => {
+                                  if (!prev) return prev;
+                                  return {
+                                    ...prev,
+                                    features: isSelected ? prev.features.filter(fid => fid !== feat.id) : [...prev.features, feat.id]
+                                  }
+                                });
+                              }}
+                              className={`w-10 h-6 rounded-full p-1 transition-colors ${isSelected ? "bg-[#25D366]" : "bg-[var(--border)]"}`}
+                            >
+                              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${isSelected ? "translate-x-4" : "translate-x-0"}`} />
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {manageTab === "settings" && (
+                  <div className="space-y-6">
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 block">Rename Category</label>
+                      <div className="flex gap-2">
+                        <input
+                          defaultValue={selectedOrg.name}
+                          className="flex-1 h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] font-medium text-sm outline-none focus:border-[#25D366]"
+                        />
+                        <button className="h-11 px-4 bg-[#25D366] text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#22c55e]">
+                          <Save size={16} /> Save
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-6 border-t border-[var(--border)]">
+                      <h4 className="text-sm font-bold text-red-500 mb-1">Danger Zone</h4>
+                      <p className="text-xs text-[var(--text-secondary)] mb-4">Permanently delete this organization. This removes the category. Agents may lose structured access.</p>
+                      <button className="w-full h-11 border-2 border-red-500/20 bg-red-500/5 text-red-500 font-bold rounded-xl text-sm hover:bg-red-500 hover:text-white transition-colors">
+                        Delete Organization
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   )
 }

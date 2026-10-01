@@ -117,7 +117,11 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
             className="p-1 rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] transition-colors border border-[var(--border)]"
             title={`Switch to ${isDark ? "Light" : "Dark"} mode`}
           >
-            {isDark ? <Sun size={12} className="text-amber-400" /> : <Moon size={12} className="text-slate-600" />}
+            {isDark ? (
+              <Sun size={12} className="text-amber-400" />
+            ) : (
+              <Moon size={12} className="text-slate-600" />
+            )}
           </button>
         </div>
       </div>
@@ -159,7 +163,9 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
               color: isDark ? "#ffffff" : "#111b21",
             }}
           >
-            <span className="font-semibold text-[13px] tracking-tight ml-0.5">3:07</span>
+            <span className="font-semibold text-[13px] tracking-tight ml-0.5">
+              3:07
+            </span>
             {/* Dynamic Island Pill */}
             <div className="w-[82px] h-[20px] bg-black rounded-full flex items-center justify-end px-2 gap-1.5 shadow-inner -mt-0.5">
               <div className="w-2.5 h-2.5 rounded-full bg-[#101010] border border-neutral-800 flex items-center justify-center">
@@ -168,7 +174,9 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
             </div>
             {/* Status Icons */}
             <div className="flex items-center gap-1.5 text-[11px] font-medium">
-              <span className="text-[10px] tracking-tighter font-semibold">5G</span>
+              <span className="text-[10px] tracking-tighter font-semibold">
+                5G
+              </span>
               {/* Battery Icon */}
               <div className="w-[20px] h-[10px] border border-current rounded-[3px] p-[1px] flex items-center">
                 <div className="w-[80%] h-full bg-current rounded-[1px]"></div>
@@ -187,9 +195,14 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
           >
             <div className="flex items-center gap-1 min-w-0">
               {/* Back Button with count badge like screenshot */}
-              <button type="button" className="flex items-center text-[#53bdeb] hover:opacity-80 transition-opacity">
+              <button
+                type="button"
+                className="flex items-center text-[#53bdeb] hover:opacity-80 transition-opacity"
+              >
                 <ChevronLeft size={22} className="-mr-1 text-[#00a884]" />
-                <span className="text-[13px] font-normal text-[#00a884]">140</span>
+                <span className="text-[13px] font-normal text-[#00a884]">
+                  140
+                </span>
               </button>
 
               {/* Avatar */}
@@ -208,7 +221,9 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
                   className="text-[13.5px] font-semibold truncate flex items-center gap-1"
                   style={{ color: isDark ? "#e9edef" : "#111b21" }}
                 >
-                  <span className="truncate">{businessPhone || businessName}</span>
+                  <span className="truncate">
+                    {businessPhone || businessName}
+                  </span>
                 </div>
                 <div
                   className="text-[10.5px] truncate"
@@ -220,7 +235,10 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
             </div>
 
             {/* Video & Phone Call Action Icons */}
-            <div className="flex items-center gap-3.5 pr-1" style={{ color: "#00a884" }}>
+            <div
+              className="flex items-center gap-3.5 pr-1"
+              style={{ color: "#00a884" }}
+            >
               <Video size={18} className="cursor-pointer hover:opacity-80" />
               <Phone size={17} className="cursor-pointer hover:opacity-80" />
             </div>
@@ -245,7 +263,9 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
                 <div
                   className="mx-auto rounded-xl px-3 py-1.5 flex items-center justify-between gap-3 text-[11px] shadow-sm max-w-[210px]"
                   style={{
-                    backgroundColor: isDark ? "rgba(31, 44, 52, 0.9)" : "rgba(255, 255, 255, 0.9)",
+                    backgroundColor: isDark
+                      ? "rgba(31, 44, 52, 0.9)"
+                      : "rgba(255, 255, 255, 0.9)",
                     border: `1px solid ${isDark ? "#2a3942" : "#e9edef"}`,
                     color: isDark ? "#e9edef" : "#111b21",
                   }}
@@ -256,12 +276,18 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
                     </div>
                     <div>
                       <div className="font-medium text-[11px]">Voice call</div>
-                      <div className="text-[9.5px]" style={{ color: isDark ? "#8696a0" : "#667781" }}>
+                      <div
+                        className="text-[9.5px]"
+                        style={{ color: isDark ? "#8696a0" : "#667781" }}
+                      >
                         No answer
                       </div>
                     </div>
                   </div>
-                  <span className="text-[9px]" style={{ color: isDark ? "#8696a0" : "#667781" }}>
+                  <span
+                    className="text-[9px]"
+                    style={{ color: isDark ? "#8696a0" : "#667781" }}
+                  >
                     12:34 PM
                   </span>
                 </div>
@@ -270,7 +296,9 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
                 <div
                   className="mx-auto rounded-xl px-3 py-1.5 flex items-center justify-between gap-3 text-[11px] shadow-sm max-w-[210px]"
                   style={{
-                    backgroundColor: isDark ? "rgba(31, 44, 52, 0.9)" : "rgba(255, 255, 255, 0.9)",
+                    backgroundColor: isDark
+                      ? "rgba(31, 44, 52, 0.9)"
+                      : "rgba(255, 255, 255, 0.9)",
                     border: `1px solid ${isDark ? "#2a3942" : "#e9edef"}`,
                     color: isDark ? "#e9edef" : "#111b21",
                   }}
@@ -281,12 +309,18 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
                     </div>
                     <div>
                       <div className="font-medium text-[11px]">Voice call</div>
-                      <div className="text-[9.5px]" style={{ color: isDark ? "#8696a0" : "#667781" }}>
+                      <div
+                        className="text-[9.5px]"
+                        style={{ color: isDark ? "#8696a0" : "#667781" }}
+                      >
                         No answer
                       </div>
                     </div>
                   </div>
-                  <span className="text-[9px]" style={{ color: isDark ? "#8696a0" : "#667781" }}>
+                  <span
+                    className="text-[9px]"
+                    style={{ color: isDark ? "#8696a0" : "#667781" }}
+                  >
                     12:35 PM
                   </span>
                 </div>
@@ -311,7 +345,9 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
             <div
               className="mx-auto rounded-lg px-2.5 py-1 text-[9.5px] leading-tight text-center max-w-[240px] shadow-sm"
               style={{
-                backgroundColor: isDark ? "rgba(24, 34, 41, 0.85)" : "rgba(254, 243, 199, 0.85)",
+                backgroundColor: isDark
+                  ? "rgba(24, 34, 41, 0.85)"
+                  : "rgba(254, 243, 199, 0.85)",
                 color: isDark ? "#ffd279" : "#92400e",
               }}
             >
@@ -326,7 +362,9 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
                 style={{
                   backgroundColor: isDark ? "#202c33" : "#ffffff",
                   color: isDark ? "#e9edef" : "#111b21",
-                  border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.04)",
+                  border: isDark
+                    ? "1px solid rgba(255,255,255,0.06)"
+                    : "1px solid rgba(0,0,0,0.04)",
                 }}
               >
                 {/* Bubble Speech Tail (WhatsApp Notch) */}
@@ -350,7 +388,9 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
                     ) : (
                       <div className="flex flex-col items-center justify-center text-neutral-400 gap-1">
                         <ImageIcon size={28} />
-                        <span className="text-[10px]">Media Header (Image)</span>
+                        <span className="text-[10px]">
+                          Media Header (Image)
+                        </span>
                       </div>
                     )}
                   </div>
@@ -361,7 +401,9 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
                     className="p-2.5 flex items-center gap-2 border-b"
                     style={{
                       borderColor: isDark ? "#2a3942" : "#e9edef",
-                      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
+                      backgroundColor: isDark
+                        ? "rgba(255,255,255,0.03)"
+                        : "rgba(0,0,0,0.02)",
                     }}
                   >
                     <div className="w-8 h-8 rounded-lg bg-[#E02424]/10 text-[#E02424] flex items-center justify-center shrink-0">
@@ -371,7 +413,10 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
                       <div className="text-[11.5px] font-semibold truncate">
                         {headerText || "document_attachment.pdf"}
                       </div>
-                      <div className="text-[9.5px]" style={{ color: isDark ? "#8696a0" : "#667781" }}>
+                      <div
+                        className="text-[9.5px]"
+                        style={{ color: isDark ? "#8696a0" : "#667781" }}
+                      >
                         PDF · 245 KB
                       </div>
                     </div>
@@ -413,7 +458,9 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
 
                 {/* Timestamp & Double Checkmarks */}
                 <div className="px-3 pb-1.5 flex items-center justify-end gap-1 text-[9px] select-none">
-                  <span style={{ color: isDark ? "#8696a0" : "#667781" }}>12:36 PM</span>
+                  <span style={{ color: isDark ? "#8696a0" : "#667781" }}>
+                    12:36 PM
+                  </span>
                   <CheckCheck size={13} className="text-[#53bdeb]" />
                 </div>
 
@@ -490,7 +537,9 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
             <div
               className="w-32 h-1 rounded-full"
               style={{
-                backgroundColor: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)",
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.3)"
+                  : "rgba(0,0,0,0.3)",
               }}
             />
           </div>

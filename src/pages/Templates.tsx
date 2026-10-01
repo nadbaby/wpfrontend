@@ -98,9 +98,7 @@ const initialTemplates: TemplateItem[] = [
     headerText: "Out For Delivery 🚚",
     body: "Hello {{customer_name}}, your package with order ID {{order_id}} is out for delivery! Expected arrival by {{delivery_time}}.",
     footer: "Please ensure someone is available to receive.",
-    buttons: [
-      { type: "phone", text: "Call Driver", value: "+919876543210" },
-    ],
+    buttons: [{ type: "phone", text: "Call Driver", value: "+919876543210" }],
   },
   {
     id: 5,
@@ -130,7 +128,9 @@ const initialTemplates: TemplateItem[] = [
     headerText: "Invoice_INV8492.pdf",
     body: "Dear {{customer_name}}, your pending invoice payment of {{amount}} is due on {{due_date}}. Pay securely online: {{link}}",
     footer: "Fine Bearing Pvt. Ltd.",
-    buttons: [{ type: "url", text: "Pay Now 💳", value: "https://pay.example.com" }],
+    buttons: [
+      { type: "url", text: "Pay Now 💳", value: "https://pay.example.com" },
+    ],
   },
 ]
 
@@ -168,7 +168,8 @@ const statusIcons: Record<string, typeof CheckCircle> = {
 }
 
 export default function Templates() {
-  const [templateList, setTemplateList] = useState<TemplateItem[]>(initialTemplates)
+  const [templateList, setTemplateList] =
+    useState<TemplateItem[]>(initialTemplates)
   const [category, setCategory] = useState("All")
   const [search, setSearch] = useState("")
   const [showCreate, setShowCreate] = useState(false)
@@ -180,7 +181,8 @@ export default function Templates() {
   const [tName, setTName] = useState("")
   const [tCat, setTCat] = useState("Marketing")
   const [tLang, setTLang] = useState("English")
-  const [tHeaderType, setTHeaderType] = useState<"none" | "text" | "image" | "document">("text")
+  const [tHeaderType, setTHeaderType] =
+    useState<"none" | "text" | "image" | "document">("text")
   const [tHeader, setTHeader] = useState("")
   const [tBody, setTBody] = useState("")
   const [tFooter, setTFooter] = useState("")
@@ -193,7 +195,9 @@ export default function Templates() {
     setTLang("English")
     setTHeaderType("text")
     setTHeader("Special Announcement 📣")
-    setTBody("Hello {{1}},\n\nWe have exciting updates regarding {{2}}! Check out the details below.")
+    setTBody(
+      "Hello {{1}},\n\nWe have exciting updates regarding {{2}}! Check out the details below.",
+    )
     setTFooter("Reply STOP to opt out")
     setTButtons([
       { type: "url", text: "Learn More 🚀", value: "https://example.com" },
@@ -241,8 +245,8 @@ export default function Templates() {
                 footer: tFooter,
                 buttons: tButtons,
               }
-            : item
-        )
+            : item,
+        ),
       )
     } else {
       const newTemplate: TemplateItem = {
@@ -295,13 +299,22 @@ export default function Templates() {
       return
     }
     const defaultText =
-      type === "url" ? "Visit Website" : type === "phone" ? "Call Us" : "Confirm"
+      type === "url"
+        ? "Visit Website"
+        : type === "phone"
+          ? "Call Us"
+          : "Confirm"
     setTButtons([
       ...tButtons,
       {
         type,
         text: defaultText,
-        value: type === "url" ? "https://example.com" : type === "phone" ? "+91 98765 43210" : "",
+        value:
+          type === "url"
+            ? "https://example.com"
+            : type === "phone"
+              ? "+91 98765 43210"
+              : "",
       },
     ])
   }
@@ -312,7 +325,7 @@ export default function Templates() {
 
   const updateButton = (idx: number, patch: Partial<TemplateButton>) => {
     setTButtons(
-      tButtons.map((btn, i) => (i === idx ? { ...btn, ...patch } : btn))
+      tButtons.map((btn, i) => (i === idx ? { ...btn, ...patch } : btn)),
     )
   }
 
@@ -340,7 +353,8 @@ export default function Templates() {
             className="text-[13.5px] mt-0.5"
             style={{ color: "var(--text-secondary)" }}
           >
-            Manage WhatsApp Business message templates with live mobile phone preview
+            Manage WhatsApp Business message templates with live mobile phone
+            preview
           </p>
         </div>
         <button
@@ -420,7 +434,10 @@ export default function Templates() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
+            <tbody
+              className="divide-y"
+              style={{ borderColor: "var(--border)" }}
+            >
               {filtered.map((t) => {
                 const StatusIcon = statusIcons[t.status]
                 return (
@@ -605,7 +622,8 @@ export default function Templates() {
                     className="text-[12px]"
                     style={{ color: "var(--text-secondary)" }}
                   >
-                    {selected.category} · {selected.lang} · Updated {selected.updated}
+                    {selected.category} · {selected.lang} · Updated{" "}
+                    {selected.updated}
                   </div>
                 </div>
               </div>
@@ -762,8 +780,8 @@ export default function Templates() {
                               {btn.type === "url"
                                 ? "URL"
                                 : btn.type === "phone"
-                                ? "CALL"
-                                : "REPLY"}
+                                  ? "CALL"
+                                  : "REPLY"}
                             </span>
                             <span className="font-medium text-[var(--text-primary)]">
                               {btn.text}
@@ -811,7 +829,8 @@ export default function Templates() {
                   className="text-[12px] mt-0.5"
                   style={{ color: "var(--text-secondary)" }}
                 >
-                  Configure your WhatsApp Business message template with real-time smartphone preview
+                  Configure your WhatsApp Business message template with
+                  real-time smartphone preview
                 </div>
               </div>
               <button
@@ -842,7 +861,9 @@ export default function Templates() {
                       value={tName}
                       onChange={(e) =>
                         setTName(
-                          e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "")
+                          e.target.value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9_]/g, ""),
                         )
                       }
                       placeholder="e.g. order_confirmation"
@@ -939,7 +960,7 @@ export default function Templates() {
                           type="button"
                           onClick={() =>
                             setTHeaderType(
-                              type.id as "none" | "text" | "image" | "document"
+                              type.id as "none" | "text" | "image" | "document",
                             )
                           }
                           className={`py-1.5 text-[11.5px] font-medium rounded-lg border transition-all ${
@@ -983,7 +1004,8 @@ export default function Templates() {
 
                     {tHeaderType === "image" && (
                       <div className="text-[12px] text-[var(--text-muted)] italic px-1">
-                        Sample image media card will be displayed as the message banner.
+                        Sample image media card will be displayed as the message
+                        banner.
                       </div>
                     )}
                   </div>
@@ -1089,7 +1111,9 @@ export default function Templates() {
                           >
                             + Quick Reply
                           </button>
-                          <span className="text-[var(--text-muted)] text-[10px]">·</span>
+                          <span className="text-[var(--text-muted)] text-[10px]">
+                            ·
+                          </span>
                           <button
                             type="button"
                             onClick={() => addButton("url")}
@@ -1097,7 +1121,9 @@ export default function Templates() {
                           >
                             + Website URL
                           </button>
-                          <span className="text-[var(--text-muted)] text-[10px]">·</span>
+                          <span className="text-[var(--text-muted)] text-[10px]">
+                            ·
+                          </span>
                           <button
                             type="button"
                             onClick={() => addButton("phone")}
@@ -1124,8 +1150,8 @@ export default function Templates() {
                               {btn.type === "url"
                                 ? "Website"
                                 : btn.type === "phone"
-                                ? "Phone"
-                                : "Reply"}
+                                  ? "Phone"
+                                  : "Reply"}
                             </span>
                             <input
                               value={btn.text}
@@ -1169,7 +1195,8 @@ export default function Templates() {
                           color: "var(--text-muted)",
                         }}
                       >
-                        No buttons added. You can add Quick Replies or Call-To-Action buttons.
+                        No buttons added. You can add Quick Replies or
+                        Call-To-Action buttons.
                       </div>
                     )}
                   </div>

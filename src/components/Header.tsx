@@ -1,6 +1,19 @@
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
-import { Search, Bell, ChevronDown, Menu, Globe, Sun, Moon, LogOut, User as UserIcon, Settings, LogIn, ArrowLeft } from "lucide-react"
+import {
+  Search,
+  Bell,
+  ChevronDown,
+  Menu,
+  Globe,
+  Sun,
+  Moon,
+  LogOut,
+  User as UserIcon,
+  Settings,
+  LogIn,
+  ArrowLeft,
+} from "lucide-react"
 import { useTheme } from "../context/ThemeContext"
 import { useAuth } from "../context/AuthContext"
 
@@ -53,10 +66,11 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
       {/* Search */}
       <div
         className={`hidden lg:flex items-center gap-2.5 flex-1 max-w-[440px] h-9 px-3.5 rounded-xl border transition-all duration-150
-        ${searchFocused
+        ${
+          searchFocused
             ? "border-[#25D366] bg-[var(--bg-card)] shadow-[0_0_0_3px_rgba(37,211,102,0.1)]"
             : "border-[var(--border)] bg-[var(--bg-input)]"
-          }
+        }
       `}
       >
         <Search size={15} className="text-[var(--text-muted)] flex-shrink-0" />
@@ -84,13 +98,20 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
             theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
           }
         >
-          {theme === "dark" ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
+          {theme === "dark" ? (
+            <Sun size={18} className="text-amber-400" />
+          ) : (
+            <Moon size={18} />
+          )}
         </button>
 
         {/* Notification bell */}
         <div className="relative">
           <button
-            onClick={() => { setShowNotifs(!showNotifs); setShowUserMenu(false); }}
+            onClick={() => {
+              setShowNotifs(!showNotifs)
+              setShowUserMenu(false)
+            }}
             className="relative p-2 rounded-xl hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
             <Bell size={18} />
@@ -125,12 +146,14 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
               ].map((n, i) => (
                 <div
                   key={i}
-                  className={`flex gap-3 px-4 py-3 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer ${!n.read ? "bg-[var(--bg-active)]" : ""
-                    }`}
+                  className={`flex gap-3 px-4 py-3 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer ${
+                    !n.read ? "bg-[var(--bg-active)]" : ""
+                  }`}
                 >
                   <div
-                    className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${n.read ? "bg-transparent" : "bg-[#25D366]"
-                      }`}
+                    className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                      n.read ? "bg-transparent" : "bg-[#25D366]"
+                    }`}
                   />
                   <div>
                     <div className="text-[13px] text-[var(--text-primary)] font-medium">
@@ -156,7 +179,10 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
         {isAuthenticated && user ? (
           <div className="relative">
             <button
-              onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifs(false); }}
+              onClick={() => {
+                setShowUserMenu(!showUserMenu)
+                setShowNotifs(false)
+              }}
               className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-[var(--bg-hover)] transition-colors ml-1"
             >
               <div className="relative">
@@ -185,8 +211,12 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
             {showUserMenu && (
               <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] shadow-xl p-2 z-50">
                 <div className="px-3 py-2 border-b border-[var(--border)] mb-1">
-                  <div className="text-xs font-bold text-[var(--text-primary)]">{user.name}</div>
-                  <div className="text-[11px] text-[var(--text-muted)] truncate">{user.email}</div>
+                  <div className="text-xs font-bold text-[var(--text-primary)]">
+                    {user.name}
+                  </div>
+                  <div className="text-[11px] text-[var(--text-muted)] truncate">
+                    {user.email}
+                  </div>
                 </div>
 
                 <Link
@@ -233,7 +263,10 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
       {(showNotifs || showUserMenu) && (
         <div
           className="fixed inset-0 z-40"
-          onClick={() => { setShowNotifs(false); setShowUserMenu(false); }}
+          onClick={() => {
+            setShowNotifs(false)
+            setShowUserMenu(false)
+          }}
         />
       )}
     </header>

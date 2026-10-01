@@ -288,8 +288,9 @@ export default function Dashboard() {
                 <Icon size={18} style={{ color }} />
               </div>
               <span
-                className={`flex items-center gap-1 text-[11.5px] font-semibold ${up ? "text-emerald-500" : "text-red-500"
-                  }`}
+                className={`flex items-center gap-1 text-[11.5px] font-semibold ${
+                  up ? "text-emerald-500" : "text-red-500"
+                }`}
               >
                 {up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                 {change}
@@ -607,7 +608,7 @@ export default function Dashboard() {
               Recent Chats
             </div>
             <button
-              onClick={() => navigate('/chat')}
+              onClick={() => navigate("/chat")}
               className="text-[12px] text-[#25D366] font-semibold hover:underline"
             >
               View all
@@ -617,7 +618,7 @@ export default function Dashboard() {
             {recentConversations.map((conv) => (
               <div
                 key={conv.name}
-                onClick={() => navigate('/chat')}
+                onClick={() => navigate("/chat")}
                 className="flex items-center gap-3 p-2.5 rounded-xl transition-colors cursor-pointer group"
                 style={{ cursor: "pointer" }}
                 onMouseEnter={(e) =>
@@ -634,8 +635,9 @@ export default function Dashboard() {
                     className="w-9 h-9 rounded-full object-cover"
                   />
                   <span
-                    className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-card)] ${conv.online ? "bg-[#25D366]" : "bg-gray-400"
-                      }`}
+                    className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-card)] ${
+                      conv.online ? "bg-[#25D366]" : "bg-gray-400"
+                    }`}
                   />
                 </div>
                 <div className="flex-1 min-w-0">

@@ -1,4 +1,16 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react"
+import { createAuthClient } from "@neondatabase/auth";
+import { BetterAuthReactAdapter } from "@neondatabase/auth/react/adapters";
+
+export const authClient = createAuthClient(import.meta.env.VITE_NEON_AUTH_URL, {
+  adapter: BetterAuthReactAdapter(),
+});
 
 export interface User {
   id: string
@@ -6,6 +18,8 @@ export interface User {
   email: string
   avatar: string
   role: string
+  category?: string
+  features?: string[]
   company?: string
   phone?: string
 }
@@ -15,7 +29,13 @@ interface AuthContextType {
   isAuthenticated: boolean
   login: (email: string, pass: string) => Promise<boolean>
   loginWithOtp: (phone: string, otp: string) => Promise<boolean>
-  signup: (name: string, email: string, pass: string, company: string) => Promise<boolean>
+  signup: (
+    name: string,
+    email: string,
+    pass: string,
+    company: string,
+  ) => Promise<boolean>
+  adminCreateUser: (name: string, email: string, pass: string, category: string, features: string[], role?: string) => Promise<boolean>
   logout: () => void
   updateProfile: (data: Partial<User>) => void
 }
@@ -24,7 +44,8 @@ const DEFAULT_USER: User = {
   id: "usr_101",
   name: "Arjun Sharma",
   email: "arjun@whatsapi.io",
-  avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&h=120&fit=crop&auto=format",
+  avatar:
+    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&h=120&fit=crop&auto=format",
   role: "Administrator",
   company: "WhatsApi Enterprise",
   phone: "+91 98765 43210",
@@ -56,22 +77,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user])
 
-  const login = async (email: string): Promise<boolean> => {
-    // Simulate API network delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
-    const loggedUser: User = {
-      id: "usr_" + Math.random().toString(36).substr(2, 6),
-      name: email.includes("agent") ? "Priya Verma" : "Arjun Sharma",
-      email: email,
-      avatar: email.includes("agent")
-        ? "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop&auto=format"
-        : "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&h=120&fit=crop&auto=format",
-      role: email.includes("agent") ? "Support Lead" : "Administrator",
-      company: "WhatsApi Enterprise",
-      phone: "+91 98765 43210",
+  const login = async (email: string, pass: string): Promise<boolean> => {
+    try {
+      const { data, error } = await authClient.signIn.email({ email, password: pass });
+
+      if (error) {
+        throw new Error(error?.message || "Invalid email or password")
+      }
+
+      // Fetch the custom category and features for this agent from our Express database
+      let category = undefined;
+      let features: string[] = [];
+      try {
+        const profileRes = await fetch("http://localhost:5000/api/agents/me", {
+          headers: {
+            "Authorization": `Bearer ${data.token || ""}`
+          }
+        });
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          if (profileData.data?.profile) {
+            category = profileData.data.profile.category;
+            features = profileData.data.profile.features;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch detailed agent profile", err);
+      }
+
+      const loggedUser: User = {
+        id: data?.user?.id || "usr_" + Math.random().toString(36).substr(2, 6),
+        name: data?.user?.name || email.split("@")[0],
+        email: email,
+        avatar: data?.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
+        role: "Administrator",
+        category,
+        features,
+        company: "WhatsApi Enterprise",
+        phone: "+91 98765 43210",
+      }
+      setUser(loggedUser)
+      return true
+    } catch (error) {
+      console.error("Login failed:", error)
+      throw error
     }
-    setUser(loggedUser)
-    return true
   }
 
   const loginWithOtp = async (phone: string): Promise<boolean> => {
@@ -80,7 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: "usr_" + Math.random().toString(36).substr(2, 6),
       name: "Verified WhatsApp User",
       email: "user@whatsapi.io",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&auto=format",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&auto=format",
       role: "Business Manager",
       company: "WhatsApp Verified Suite",
       phone: phone,
@@ -92,25 +143,82 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (
     name: string,
     email: string,
-    _pass: string,
-    company: string
+    pass: string,
+    company: string,
   ): Promise<boolean> => {
-    await new Promise((resolve) => setTimeout(resolve, 900))
-    const newUser: User = {
-      id: "usr_" + Math.random().toString(36).substr(2, 6),
-      name,
-      email,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
-      role: "Owner / Admin",
-      company: company || "New Organization",
+    try {
+      const { data, error } = await authClient.signUp.email({ name, email, password: pass });
+
+      if (error) {
+        throw new Error(error?.message || "Signup failed. User may already exist.")
+      }
+
+      const newUser: User = {
+        id: data?.user?.id || "usr_" + Math.random().toString(36).substr(2, 6),
+        name,
+        email,
+        avatar: data?.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+        role: "Owner / Admin",
+        company: company || "New Organization",
+      }
+      setUser(newUser)
+      return true
+    } catch (error) {
+      console.error("Signup failed:", error)
+      throw error
     }
-    setUser(newUser)
-    return true
   }
 
-  const logout = () => {
+  const adminCreateUser = async (
+    name: string,
+    email: string,
+    pass: string,
+    category: string,
+    features: string[],
+    role: string = "agent"
+  ): Promise<boolean> => {
+    try {
+      // 1. Create the base Auth user in Neon Auth
+      const authResponse = await fetch(`${import.meta.env.VITE_NEON_AUTH_URL}/admin/create-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+        },
+        body: JSON.stringify({ name, email, password: pass, role }),
+      });
+
+      if (!authResponse.ok) {
+        const errorData = await authResponse.json();
+        throw new Error(errorData.message || "Failed creating identity in Neon Auth.");
+      }
+
+      // 2. Add the agent profile (Category & Features) to our Express Database
+      const profileResponse = await fetch("http://localhost:5000/api/agents/permissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+        },
+        body: JSON.stringify({ target_email: email, category, features })
+      });
+
+      if (!profileResponse.ok) {
+        throw new Error("Failed assigning specific category and features in the backend.");
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Agent user creation failed:", error);
+      throw error;
+    }
+  }
+
+  const logout = async () => {
+    await authClient.signOut();
     setUser(null)
     localStorage.removeItem("whatsapi_user")
+    localStorage.removeItem("authToken")
   }
 
   const updateProfile = (data: Partial<User>) => {
@@ -127,6 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         loginWithOtp,
         signup,
+        adminCreateUser,
         logout,
         updateProfile,
       }}

@@ -16,7 +16,7 @@ import Login from "./pages/Login"
 import { AuthProvider, useAuth } from "./context/AuthContext"
 import { ThemeProvider } from "./context/ThemeContext"
 
-const pageTitles: Record<string, { title: string; subtitle?: string }> = {
+const pageTitles: Record<string, { title: string subtitle?: string }> = {
   "/": { title: "Dashboard", subtitle: "Analytics & overview" },
   "/chat": { title: "WA Chat", subtitle: "Customer conversations" },
   "/appearance": { title: "Chat Appearance", subtitle: "Customize widget" },
@@ -52,7 +52,9 @@ function AnimatedRoutes() {
         animate="animate"
         exit="exit"
         variants={pageVariants}
-        className={`flex-1 ${isChat ? "overflow-hidden flex flex-col h-full bg-[#efeae2] dark:bg-[#0b141a]" : "overflow-auto"
+        className={`flex-1 ${isChat
+            ? "overflow-hidden flex flex-col h-full bg-[#efeae2] dark:bg-[#0b141a]"
+            : "overflow-auto"
           }`}
       >
         <Routes location={location} key={location.pathname}>
@@ -103,8 +105,8 @@ function AppShell() {
 
   React.useEffect(() => {
     const handleToggle = () => setMobileOpen(true)
-    window.addEventListener('openSidebar', handleToggle)
-    return () => window.removeEventListener('openSidebar', handleToggle)
+    window.addEventListener("openSidebar", handleToggle)
+    return () => window.removeEventListener("openSidebar", handleToggle)
   }, [])
 
   // Restrict access globally if not authenticated
