@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
   Upload,
   Search,
@@ -20,89 +20,15 @@ import {
   CheckCircle,
 } from "lucide-react"
 
-const mediaItems = [
-  {
-    id: 1,
-    name: "product-banner.jpg",
-    type: "image",
-    size: "2.4 MB",
-    date: "Sep 20, 2026",
-    author: "Arjun S.",
-    url: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=300&h=200&fit=crop",
-  },
-  {
-    id: 2,
-    name: "team-photo.jpg",
-    type: "image",
-    size: "3.1 MB",
-    date: "Sep 18, 2026",
-    author: "Sneha P.",
-    url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=300&h=200&fit=crop",
-  },
-  {
-    id: 3,
-    name: "company-intro.mp4",
-    type: "video",
-    size: "18.2 MB",
-    date: "Sep 15, 2026",
-    author: "Rahul K.",
-    url: "https://images.unsplash.com/photo-1536240478700-b869ad10e128?w=300&h=200&fit=crop",
-  },
-  {
-    id: 4,
-    name: "price-list.pdf",
-    type: "document",
-    size: "0.8 MB",
-    date: "Sep 12, 2026",
-    author: "Arjun S.",
-    url: null,
-  },
-  {
-    id: 5,
-    name: "welcome-audio.mp3",
-    type: "audio",
-    size: "4.2 MB",
-    date: "Sep 10, 2026",
-    author: "Sneha P.",
-    url: null,
-  },
-  {
-    id: 6,
-    name: "sale-poster.png",
-    type: "image",
-    size: "1.6 MB",
-    date: "Sep 8, 2026",
-    author: "Rahul K.",
-    url: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=300&h=200&fit=crop",
-  },
-  {
-    id: 7,
-    name: "catalog-2026.pdf",
-    type: "document",
-    size: "5.4 MB",
-    date: "Sep 5, 2026",
-    author: "Arjun S.",
-    url: null,
-  },
-  {
-    id: 8,
-    name: "office-tour.mp4",
-    type: "video",
-    size: "24.8 MB",
-    date: "Sep 2, 2026",
-    author: "Sneha P.",
-    url: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=300&h=200&fit=crop",
-  },
-  {
-    id: 9,
-    name: "hero-image.jpg",
-    type: "image",
-    size: "1.2 MB",
-    date: "Aug 28, 2026",
-    author: "Rahul K.",
-    url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&h=200&fit=crop",
-  },
-]
+interface MediaItem {
+  id: number;
+  name: string;
+  type: string;
+  size: string;
+  date: string;
+  author: string;
+  url: string | null;
+}
 
 const typeFilters = ["All", "Images", "Videos", "Documents", "Audio"]
 const typeIcons: Record<string, typeof Image> = {
@@ -119,15 +45,76 @@ const typeColors: Record<string, string> = {
 }
 
 export default function MediaLibrary() {
+  const [mediaList, setMediaList] = useState<MediaItem[]>([])
   const [filter, setFilter] = useState("All")
   const [search, setSearch] = useState("")
   const [view, setView] = useState<"grid" | "list">("grid")
   const [selected, setSelected] = useState<number[]>([])
   const [dragging, setDragging] = useState(false)
-  const [preview, setPreview] = useState<typeof mediaItems[0] | null>(null)
+  const [preview, setPreview] = useState<MediaItem | null>(null)
+  const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const filtered = mediaItems.filter((m) => {
+  useEffect(() => {
+    fetchMedia();
+  }, []);
+
+  const fetchMedia = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/media");
+      if (res.ok) {
+        const data = await res.json();
+        setMediaList(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch media", err);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    for (let i = 0; i < files.length; i++) {
+      const formData = new FormData();
+      formData.append("media_file", files[i]);
+
+      try {
+        const res = await fetch("http://localhost:5000/api/media/upload", {
+          method: "POST",
+          body: formData
+        });
+        if (res.ok) {
+          await fetchMedia(); // Re-fetch to get newest files with presigned URLs
+        }
+      } catch (err) {
+        console.error("Failed to upload", err);
+      }
+    }
+    setUploading(false);
+
+    // Clear input
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    if (window.confirm("Are you sure you want to delete this media file?")) {
+      try {
+        const res = await fetch(`http://localhost:5000/api/media/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          setMediaList(prev => prev.filter(m => m.id !== id));
+          setSelected(prev => prev.filter(s => s !== id));
+          if (preview?.id === id) setPreview(null);
+        }
+      } catch (err) {
+        console.error("Failed to delete", err);
+      }
+    }
+  };
+
+  const filtered = mediaList.filter((m) => {
     const matchType =
       filter === "All" ||
       (filter === "Images" && m.type === "image") ||
@@ -167,10 +154,15 @@ export default function MediaLibrary() {
         </div>
         <button
           onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-2 px-4 py-2 bg-[#25D366] hover:bg-[#22C55E] text-white rounded-xl text-[13px] font-semibold transition-colors"
+          disabled={uploading}
+          className={`flex items-center gap-2 px-4 py-2 ${uploading ? "bg-gray-400" : "bg-[#25D366] hover:bg-[#22C55E]"} text-white rounded-xl text-[13px] font-semibold transition-colors`}
         >
-          <Upload size={16} />
-          Upload Media
+          {uploading ? (
+            <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+          ) : (
+            <Upload size={16} />
+          )}
+          {uploading ? "Uploading..." : "Upload Media"}
         </button>
         <input
           ref={fileRef}
@@ -178,6 +170,7 @@ export default function MediaLibrary() {
           multiple
           className="hidden"
           accept="image/*,video/*,audio/*,.pdf"
+          onChange={handleFileUpload}
         />
       </div>
 
@@ -266,18 +259,16 @@ export default function MediaLibrary() {
         >
           <button
             onClick={() => setView("grid")}
-            className={`p-2 rounded-lg transition-colors ${
-              view === "grid" ? "bg-[#F0FDF4] text-[#25D366]" : ""
-            }`}
+            className={`p-2 rounded-lg transition-colors ${view === "grid" ? "bg-[#F0FDF4] text-[#25D366]" : ""
+              }`}
             style={view !== "grid" ? { color: "var(--text-muted)" } : {}}
           >
             <Grid size={14} />
           </button>
           <button
             onClick={() => setView("list")}
-            className={`p-2 rounded-lg transition-colors ${
-              view === "list" ? "bg-[#F0FDF4] text-[#25D366]" : ""
-            }`}
+            className={`p-2 rounded-lg transition-colors ${view === "list" ? "bg-[#F0FDF4] text-[#25D366]" : ""
+              }`}
             style={view !== "list" ? { color: "var(--text-muted)" } : {}}
           >
             <List size={14} />
@@ -333,10 +324,9 @@ export default function MediaLibrary() {
                 key={item.id}
                 onClick={() => toggleSelect(item.id)}
                 className={`group rounded-2xl border overflow-hidden cursor-pointer transition-all duration-150
-                  ${
-                    isSelected
-                      ? "border-[#25D366] shadow-md shadow-[#25D366]/15"
-                      : "hover:border-[#25D366]/40 hover:shadow-md hover:shadow-black/5"
+                  ${isSelected
+                    ? "border-[#25D366] shadow-md shadow-[#25D366]/15"
+                    : "hover:border-[#25D366]/40 hover:shadow-md hover:shadow-black/5"
                   }`}
                 style={{
                   background: "var(--bg-card)",
@@ -380,7 +370,7 @@ export default function MediaLibrary() {
                       <Eye size={12} />
                     </button>
                     <button
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => handleDelete(e, item.id)}
                       className="w-7 h-7 rounded-lg bg-white/90 backdrop-blur-sm flex items-center justify-center hover:text-red-500 shadow-sm"
                       style={{ color: "var(--text-secondary)" }}
                     >
@@ -520,6 +510,7 @@ export default function MediaLibrary() {
                           <Copy size={14} />
                         </button>
                         <button
+                          onClick={(e) => handleDelete(e, item.id)}
                           className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors"
                           style={{ color: "var(--text-muted)" }}
                         >

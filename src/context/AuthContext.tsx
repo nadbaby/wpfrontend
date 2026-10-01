@@ -88,17 +88,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Fetch the custom category and features for this agent from our Express database
       let category = undefined;
       let features: string[] = [];
+      let isAgent = false;
+
       try {
-        const profileRes = await fetch("http://localhost:5000/api/agents/me", {
-          headers: {
-            "Authorization": `Bearer ${data.token || ""}`
-          }
-        });
+        const profileRes = await fetch(`http://localhost:5000/api/agents/me?email=${encodeURIComponent(email)}`);
         if (profileRes.ok) {
           const profileData = await profileRes.json();
           if (profileData.data?.profile) {
             category = profileData.data.profile.category;
             features = profileData.data.profile.features;
+            isAgent = true; // They exist in agent collection
           }
         }
       } catch (err) {
@@ -110,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: data?.user?.name || email.split("@")[0],
         email: email,
         avatar: data?.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
-        role: "Administrator",
+        role: isAgent ? "agent" : "Administrator",
         category,
         features,
         company: "WhatsApi Enterprise",
@@ -178,33 +177,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: string = "agent"
   ): Promise<boolean> => {
     try {
-      // 1. Create the base Auth user in Neon Auth
-      const authResponse = await fetch(`${import.meta.env.VITE_NEON_AUTH_URL}/admin/create-user`, {
+      const response = await fetch("http://localhost:5000/api/agents/provision", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}` // If standard JWT is used
         },
-        body: JSON.stringify({ name, email, password: pass, role }),
+        body: JSON.stringify({ name, email, password: pass, category, features, role }),
       });
 
-      if (!authResponse.ok) {
-        const errorData = await authResponse.json();
-        throw new Error(errorData.message || "Failed creating identity in Neon Auth.");
-      }
-
-      // 2. Add the agent profile (Category & Features) to our Express Database
-      const profileResponse = await fetch("http://localhost:5000/api/agents/permissions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
-        },
-        body: JSON.stringify({ target_email: email, category, features })
-      });
-
-      if (!profileResponse.ok) {
-        throw new Error("Failed assigning specific category and features in the backend.");
+      if (!response.ok) {
+        let errMsg = "Failed creating agent.";
+        try {
+          const errData = await response.json();
+          errMsg = errData.message || errMsg;
+        } catch (e) {
+          errMsg = await response.text() || errMsg;
+        }
+        throw new Error(errMsg);
       }
 
       return true;

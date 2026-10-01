@@ -69,6 +69,8 @@ interface Message {
   text?: string
   time: string
   status?: "sending" | "sent" | "delivered" | "read"
+  isTemplate?: boolean;
+  templateButtons?: string[];
   media?: {
     type: "image" | "video" | "audio" | "document"
     url: string
@@ -249,9 +251,23 @@ export default function Chat() {
     bgFilter: isDark ? "var(--bg-input)" : "#f0f2f5",
   }
 
-  const [selectedConv, setSelectedConv] = useState(conversations[0])
+  const [convs, setConvs] = useState(conversations)
+  const [selectedConvId, setSelectedConvId] = useState(conversations[0].id)
+  const selectedConv = convs.find(c => c.id === selectedConvId) || convs[0]
+
+  const [chatMessages, setChatMessages] = useState<Record<number, Message[]>>({
+    [conversations[0].id]: initialMessages
+  })
+  const messages = chatMessages[selectedConv.id] || []
+
+  const setMessages = (setter: (msgs: Message[]) => Message[]) => {
+    setChatMessages(prev => ({
+      ...prev,
+      [selectedConv.id]: setter(prev[selectedConv.id] || [])
+    }))
+  }
+
   const [message, setMessage] = useState("")
-  const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [isTyping, setIsTyping] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
   const [activeFilter, setActiveFilter] = useState("All")
@@ -346,6 +362,55 @@ export default function Chat() {
         return [...updated, reply]
       })
     }, 3000)
+  }
+
+  const assignAgent = (agentName: string) => {
+    setConvs(prev => prev.map(c =>
+      c.id === selectedConv.id ? { ...c, agent: agentName } : c
+    ));
+
+    // Send a system message that the chat was re-assigned
+    const sysMsg: Message = {
+      id: Date.now(),
+      type: "date",
+      text: `Chat automatically assigned to ${agentName}`,
+      time: getTime()
+    };
+    setMessages(m => [...m, sysMsg]);
+  }
+
+  const simulateCustomerTemplateClick = (option: string) => {
+    // Customer clicks the button
+    const replyMsg: Message = {
+      id: Date.now(),
+      type: "in",
+      text: `${option}`,
+      time: getTime(),
+      status: "read"
+    };
+    setMessages(m => [...m, replyMsg]);
+
+    // System detects the payload and routes to agent automatically
+    setTimeout(() => {
+      let routeTarget = "Arjun S."; // Default
+      if (option === "Sales") routeTarget = "Sales Team";
+      if (option === "Marketing") routeTarget = "Marketing Dept";
+      assignAgent(routeTarget);
+    }, 600);
+  }
+
+  const sendDemoTemplate = () => {
+    const templateMsg: Message = {
+      id: Date.now(),
+      type: "out",
+      text: "Welcome to WhatsApi! Please select the department you would like to speak with:",
+      isTemplate: true,
+      templateButtons: ["Sales", "Marketing", "Support"],
+      time: getTime(),
+      status: "read"
+    };
+    setMessages(m => [...m, templateMsg]);
+    setShowAttachMenu(false);
   }
 
   // --- Microphone Recording ---
@@ -472,9 +537,8 @@ export default function Chat() {
     >
       {/* Left: Conversation list */}
       <div
-        className={`${
-          mobileView === "list" ? "flex" : "hidden"
-        } md:flex w-full md:w-[350px] lg:w-[400px] flex-shrink-0 border-r flex-col`}
+        className={`${mobileView === "list" ? "flex" : "hidden"
+          } md:flex w-full md:w-[350px] lg:w-[400px] flex-shrink-0 border-r flex-col`}
         style={{
           backgroundColor: colors.bgChatPanel,
           borderColor: colors.border,
@@ -570,8 +634,7 @@ export default function Chat() {
             <div
               key={conv.id}
               onClick={() => {
-                setSelectedConv(conv)
-                setMessages(initialMessages)
+                setSelectedConvId(conv.id)
                 setMobileView("chat")
               }}
               className="flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors relative"
@@ -640,9 +703,8 @@ export default function Chat() {
 
       {/* Center: Chat */}
       <div
-        className={`${
-          mobileView === "chat" ? "flex" : "hidden"
-        } md:flex flex-1 flex-col min-w-0 relative`}
+        className={`${mobileView === "chat" ? "flex" : "hidden"
+          } md:flex flex-1 flex-col min-w-0 relative`}
       >
         {/* Chat header */}
         <div
@@ -675,9 +737,8 @@ export default function Chat() {
                 className="w-10 h-10 rounded-full object-cover"
               />
               <span
-                className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 ${
-                  selectedConv.online ? "bg-[#25D366]" : "bg-gray-400"
-                }`}
+                className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 ${selectedConv.online ? "bg-[#25D366]" : "bg-gray-400"
+                  }`}
                 style={{ borderColor: colors.bgHeader }}
               />
             </div>
@@ -832,11 +893,11 @@ export default function Chat() {
                   >
                     {msg.id ===
                       messages.filter((m) => m.type === "out").pop()?.id && (
-                      <div
-                        className="absolute top-0 -right-2 w-0 h-0 border-t-[10px] border-t-transparent border-r-[10px] border-r-transparent"
-                        style={{ borderTopColor: colors.bgOut }}
-                      ></div>
-                    )}
+                        <div
+                          className="absolute top-0 -right-2 w-0 h-0 border-t-[10px] border-t-transparent border-r-[10px] border-r-transparent"
+                          style={{ borderTopColor: colors.bgOut }}
+                        ></div>
+                      )}
 
                     {msg.media && msg.media.type === "image" && (
                       <img
@@ -880,12 +941,28 @@ export default function Chat() {
                       </p>
                     )}
 
+                    {msg.isTemplate && msg.templateButtons && (
+                      <div className="mt-2 flex flex-col gap-1.5 border-t pt-2" style={{ borderColor: colors.border }}>
+                        <div className="text-[11px] uppercase tracking-wider mb-1" style={{ color: colors.textSecondary }}>Interactive Template (Click to Simulate)</div>
+                        <div className="flex gap-2">
+                          {msg.templateButtons.map(btn => (
+                            <button
+                              key={btn}
+                              onClick={() => simulateCustomerTemplateClick(btn)}
+                              className="bg-white dark:bg-gray-800 border border-[#25d366] text-[#25d366] rounded-lg px-4 py-1.5 text-sm font-semibold hover:bg-[#25d366] hover:text-white transition-colors"
+                            >
+                              {btn}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div
-                      className={`${
-                        !msg.text
+                      className={`${!msg.text
                           ? "float-right mt-1 ml-2"
                           : "float-right ml-2 mt-1"
-                      } flex items-center gap-1 relative top-1 z-10`}
+                        } flex items-center gap-1 relative top-1 z-10`}
                     >
                       <span
                         className="text-[10px]"
@@ -1099,6 +1176,19 @@ export default function Chat() {
                         Location
                       </span>
                     </div>
+                    <div
+                      className="flex items-center gap-3 p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl cursor-pointer transition-colors"
+                      onClick={() => {
+                        sendDemoTemplate();
+                      }}
+                    >
+                      <span className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white">
+                        <CheckCheck size={20} />
+                      </span>
+                      <span className="text-[14px] font-medium" style={{ color: colors.textPrimary }}>
+                        Send Template Router
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1246,11 +1336,10 @@ export default function Chat() {
       {/* Right: Customer info */}
       {showCustomerPanel && (
         <div
-          className={`${
-            mobileView === "profile"
+          className={`${mobileView === "profile"
               ? "flex absolute inset-y-0 right-0 z-30 shadow-2xl"
               : "hidden"
-          } xl:flex xl:relative xl:shadow-none w-full md:w-[320px] flex-shrink-0 border-l flex-col overflow-y-auto cursor-default`}
+            } xl:flex xl:relative xl:shadow-none w-full md:w-[320px] flex-shrink-0 border-l flex-col overflow-y-auto cursor-default`}
           style={{
             backgroundColor: colors.bgChatPanel,
             borderColor: colors.border,
@@ -1370,9 +1459,25 @@ export default function Chat() {
                 paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
               }}
             >
-              <button className="w-full py-2 rounded-xl bg-[#F0FDF4] text-[#25D366] text-[13px] font-semibold hover:bg-[#DCFCE7] transition-colors">
-                Assign Agent
-              </button>
+              <div className="relative group">
+                <select
+                  value={selectedConv.agent}
+                  onChange={(e) => assignAgent(e.target.value)}
+                  className="w-full py-2.5 rounded-xl bg-[#F0FDF4] text-[#25D366] text-[13px] font-bold hover:bg-[#DCFCE7] transition-colors outline-none text-center appearance-none cursor-pointer"
+                >
+                  <optgroup label="Categories">
+                    <option value="Sales Team">Assign to Sales Team</option>
+                    <option value="Marketing Dept">Assign to Marketing</option>
+                  </optgroup>
+                  <optgroup label="Specific Agents">
+                    <option value="Rahul K.">Rahul K.</option>
+                    <option value="Arjun S.">Arjun S.</option>
+                    <option value="Sneha P.">Sneha P.</option>
+                  </optgroup>
+                  <option value="Unassigned">Mark Unassigned</option>
+                </select>
+              </div>
+
               <button
                 className="w-full py-2 rounded-xl text-[13px] font-semibold flex items-center justify-center gap-2 transition-colors border"
                 style={{

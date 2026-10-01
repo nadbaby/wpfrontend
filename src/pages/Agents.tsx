@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   Plus,
   Search,
@@ -18,88 +19,7 @@ import {
   Zap,
 } from "lucide-react"
 
-const agents = [
-  {
-    id: 1,
-    name: "Rahul Kumar",
-    role: "Senior Agent",
-    status: "online",
-    avatar:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=60&h=60&fit=crop",
-    activeChats: 8,
-    resolvedToday: 24,
-    avgResponse: "1.8 min",
-    rating: 4.9,
-    skills: ["Customer Support", "Technical", "Billing"],
-    teams: ["Support", "Sales"],
-    workingHours: "9 AM – 6 PM",
-    dept: "Support",
-  },
-  {
-    id: 2,
-    name: "Sneha Patel",
-    role: "Agent",
-    status: "online",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108755-2616b612b1e0?w=60&h=60&fit=crop",
-    activeChats: 5,
-    resolvedToday: 18,
-    avgResponse: "2.4 min",
-    rating: 4.7,
-    skills: ["Onboarding", "Customer Support"],
-    teams: ["Support"],
-    workingHours: "10 AM – 7 PM",
-    dept: "Support",
-  },
-  {
-    id: 3,
-    name: "Arjun Sharma",
-    role: "Team Lead",
-    status: "online",
-    avatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=60&h=60&fit=crop",
-    activeChats: 3,
-    resolvedToday: 12,
-    avgResponse: "3.1 min",
-    rating: 4.8,
-    skills: ["Leadership", "Escalations", "Customer Support"],
-    teams: ["All"],
-    workingHours: "9 AM – 6 PM",
-    dept: "Management",
-  },
-  {
-    id: 4,
-    name: "Priya Singh",
-    role: "Agent",
-    status: "away",
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=60&h=60&fit=crop",
-    activeChats: 0,
-    resolvedToday: 9,
-    avgResponse: "4.2 min",
-    rating: 4.5,
-    skills: ["Sales", "Product Demos"],
-    teams: ["Sales"],
-    workingHours: "11 AM – 8 PM",
-    dept: "Sales",
-  },
-  {
-    id: 5,
-    name: "Kiran Reddy",
-    role: "Agent",
-    status: "offline",
-    avatar:
-      "https://images.unsplash.com/photo-1552058544-f2b08422138a?w=60&h=60&fit=crop",
-    activeChats: 0,
-    resolvedToday: 0,
-    avgResponse: "5.1 min",
-    rating: 4.3,
-    skills: ["Technical", "API Support"],
-    teams: ["Technical"],
-    workingHours: "2 PM – 11 PM",
-    dept: "Technical",
-  },
-]
+
 
 const statusColors: Record<string, string> = {
   online: "bg-[#25D366]",
@@ -115,9 +35,63 @@ const teamStats = [
 ]
 
 export default function Agents() {
+  const navigate = useNavigate();
+  const [agents, setAgents] = useState<any[]>([])
   const [search, setSearch] = useState("")
-  const [selected, setSelected] = useState<typeof agents[0] | null>(null)
+  const [selected, setSelected] = useState<any | null>(null)
   const [statusFilter, setStatusFilter] = useState("All")
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/agents/all")
+      .then(res => res.json())
+      .then(data => {
+        const dbAgents = data.map((user: any) => ({
+          id: user.id,
+          name: user.email.split('@')[0],
+          email: user.email,
+          role: user.category,
+          status: ["online", "away", "offline"][Math.floor(Math.random() * 3)],
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.email)}`,
+          activeChats: Math.floor(Math.random() * 8),
+          resolvedToday: Math.floor(Math.random() * 20),
+          avgResponse: (Math.random() * 4 + 1).toFixed(1) + " min",
+          rating: (Math.random() * 1 + 4).toFixed(1),
+          skills: ["Customer Support"],
+          teams: [user.category],
+          workingHours: "9 AM – 6 PM",
+          dept: user.category
+        }));
+        setAgents(dbAgents);
+      })
+      .catch(console.error);
+  }, [])
+
+  const cycleStatus = (agentId: string, e?: any) => {
+    if (e) e.stopPropagation();
+    setAgents(prev => prev.map(a => {
+      if (a.id === agentId) {
+        const order = ["online", "away", "offline"];
+        const nextStatus = order[(order.indexOf(a.status) + 1) % 3];
+        if (selected?.id === agentId) setSelected((s: any) => ({ ...s, status: nextStatus }));
+        return { ...a, status: nextStatus };
+      }
+      return a;
+    }));
+  };
+
+  const handleEdit = (agentId: string, e?: any) => {
+    if (e) e.stopPropagation();
+    const newName = prompt("Enter a new overriding handle name for this agent:");
+    if (newName) {
+      setAgents(prev => prev.map(a => {
+        if (a.id === agentId) {
+          if (selected?.id === agentId) setSelected((s: any) => ({ ...s, name: newName }));
+          return { ...a, name: newName };
+        }
+        return a;
+      }));
+    }
+  };
 
   const filtered = agents.filter((a) => {
     const matchSearch =
@@ -146,9 +120,9 @@ export default function Agents() {
             Monitor and manage your support team
           </p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-[#25D366] hover:bg-[#22C55E] text-white rounded-xl text-[13px] font-semibold transition-colors">
+        <button onClick={() => navigate('/organization')} className="flex items-center gap-2 px-4 py-2 bg-[#25D366] hover:bg-[#22C55E] text-white rounded-xl text-[13px] font-semibold transition-colors">
           <Plus size={16} />
-          Add Agent
+          Provision Agents
         </button>
       </div>
 
@@ -310,7 +284,7 @@ export default function Agents() {
 
             {/* Skills */}
             <div className="flex flex-wrap gap-1.5 mb-4">
-              {agent.skills.slice(0, 3).map((skill) => (
+              {agent.skills.slice(0, 3).map((skill: string) => (
                 <span
                   key={skill}
                   className="px-2 py-0.5 rounded-lg text-[11px] font-medium"
@@ -340,29 +314,29 @@ export default function Agents() {
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                  }}
+                  onClick={(e) => handleEdit(agent.id, e)}
                   className="p-1.5 rounded-lg hover:bg-blue-50 hover:text-blue-500 transition-colors"
                   style={{ color: "var(--text-muted)" }}
+                  title="Edit Agent Name"
                 >
                   <Edit size={13} />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
+                    navigate('/chat')
                   }}
                   className="p-1.5 rounded-lg hover:bg-[#F0FDF4] hover:text-[#25D366] transition-colors"
                   style={{ color: "var(--text-muted)" }}
+                  title="Assign in Chat"
                 >
                   <Users size={13} />
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                  }}
+                  onClick={(e) => cycleStatus(agent.id, e)}
                   className="p-1.5 rounded-lg hover:bg-amber-50 hover:text-amber-500 transition-colors"
                   style={{ color: "var(--text-muted)" }}
+                  title="Cycle Availability"
                 >
                   <ToggleLeft size={13} />
                 </button>
@@ -517,7 +491,7 @@ export default function Agents() {
                   Skills
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {selected.skills.map((skill) => (
+                  {selected.skills.map((skill: string) => (
                     <span
                       key={skill}
                       className="px-3 py-1 rounded-xl text-[#25D366] text-[12px] font-medium"
@@ -538,7 +512,7 @@ export default function Agents() {
                   Teams
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {selected.teams.map((team) => (
+                  {selected.teams.map((team: string) => (
                     <span
                       key={team}
                       className="px-3 py-1 rounded-xl bg-blue-50 text-blue-600 text-[12px] font-medium"
@@ -577,19 +551,21 @@ export default function Agents() {
               {/* Actions */}
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button
+                  onClick={() => navigate('/chat')}
                   className="py-2.5 rounded-xl text-[#25D366] text-[13px] font-semibold hover:bg-[#DCFCE7] transition-colors"
                   style={{ background: "var(--bg-active)" }}
                 >
                   Assign Conversations
                 </button>
                 <button
+                  onClick={() => cycleStatus(selected.id)}
                   className="py-2.5 rounded-xl text-[13px] font-semibold hover:bg-[#F1F5F9] transition-colors"
                   style={{
                     background: "var(--bg-input)",
                     color: "var(--text-secondary)",
                   }}
                 >
-                  Set Availability
+                  Set Availability: <span className="capitalize">{selected.status}</span>
                 </button>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Plus,
@@ -36,11 +36,18 @@ const FEATURE_LIST = [
 export default function Organization() {
   const { adminCreateUser } = useAuth()
 
-  const [organizations, setOrganizations] = useState<OrgNode[]>([
-    { id: "org_1", name: "Sales Team", features: ["send-messages", "create-template"], membersCount: 4 },
-    { id: "org_2", name: "Marketing", features: ["send-messages", "send-broadcasting", "schedule-broadcasting"], membersCount: 2 },
-    { id: "org_3", name: "Support", features: ["send-messages"], membersCount: 5 },
-  ])
+  const [organizations, setOrganizations] = useState<OrgNode[]>([])
+
+  const fetchOrgs = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/orgs");
+      if (res.ok) setOrganizations(await res.json());
+    } catch (e) { }
+  };
+
+  useEffect(() => {
+    fetchOrgs();
+  }, []);
 
   // New Org State
   const [newOrgName, setNewOrgName] = useState("")
@@ -51,20 +58,56 @@ export default function Organization() {
   const [selectedOrg, setSelectedOrg] = useState<OrgNode | null>(null)
 
   // Agent Invite Form
+  const [inviteType, setInviteType] = useState<"new" | "existing">("existing")
+  const [existingAgentEmail, setExistingAgentEmail] = useState("")
   const [inviteName, setInviteName] = useState("")
   const [inviteEmail, setInviteEmail] = useState("")
   const [invitePass, setInvitePass] = useState("")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
+  const [allAgents, setAllAgents] = useState<any[]>([])
 
   const [showManageModal, setShowManageModal] = useState(false)
   const [manageTab, setManageTab] = useState<"members" | "permissions" | "settings">("members")
+  const [orgMembers, setOrgMembers] = useState<any[]>([])
+
+  const fetchMembers = async (orgName: string) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/orgs/${encodeURIComponent(orgName)}/members`);
+      if (res.ok) setOrgMembers(await res.json());
+    } catch (err) { }
+  }
 
   const openManageModal = (org: OrgNode) => {
     setSelectedOrg(org)
     setManageTab("members")
     setShowManageModal(true)
+    fetchMembers(org.name)
+  }
+
+  const removeMember = async (email: string) => {
+    await fetch(`http://localhost:5000/api/orgs/members/${encodeURIComponent(email)}`, { method: "DELETE" });
+    setOrgMembers(prev => prev.filter(m => m.email !== email));
+    fetchOrgs();
+  }
+
+  const handleUpdateOrg = async () => {
+    if (!selectedOrg) return;
+    await fetch(`http://localhost:5000/api/orgs/${selectedOrg.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: selectedOrg.name, features: selectedOrg.features })
+    });
+    fetchOrgs(); // Refresh
+  }
+
+  const handleDeleteOrg = async (id: string) => {
+    if (window.confirm("Delete this organization?")) {
+      await fetch(`http://localhost:5000/api/orgs/${id}`, { method: "DELETE" });
+      setShowManageModal(false);
+      fetchOrgs();
+    }
   }
 
   const toggleFeature = (featureId: string) => {
@@ -73,17 +116,27 @@ export default function Organization() {
     )
   }
 
-  const handleCreateOrg = () => {
+  const handleCreateOrg = async () => {
     if (!newOrgName.trim()) return;
-    const newOrg: OrgNode = {
-      id: "org_" + Math.random().toString(36).substr(2, 6),
-      name: newOrgName,
-      features: [...newOrgFeatures],
-      membersCount: 0
+    try {
+      const res = await fetch("http://localhost:5000/api/orgs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newOrgName, features: newOrgFeatures })
+      });
+      if (res.ok) {
+        const newOrg = await res.json();
+        setOrganizations(prev => [newOrg, ...prev])
+        setNewOrgName("")
+        setNewOrgFeatures([])
+      } else {
+        const errData = await res.json().catch(() => null);
+        alert("Failed to create organization: " + (errData?.error || "Unknown Error"));
+      }
+    } catch (e: any) {
+      alert("Network Error: " + e.message);
+      console.error(e);
     }
-    setOrganizations([newOrg, ...organizations])
-    setNewOrgName("")
-    setNewOrgFeatures([])
   }
 
   const openInvite = (org: OrgNode) => {
@@ -94,19 +147,39 @@ export default function Organization() {
     setInviteName("")
     setInviteEmail("")
     setInvitePass("")
+
+    fetch("http://localhost:5000/api/agents/all")
+      .then(r => r.json())
+      .then(data => setAllAgents(data || []))
+      .catch(e => console.error(e));
   }
 
   const handleInviteAgent = async () => {
     if (!selectedOrg) return
-    if (!inviteName || !inviteEmail || !invitePass) {
-      setErrorMsg("Please fill all fields")
-      return
-    }
 
     try {
       setLoading(true)
       setErrorMsg("")
-      await adminCreateUser(inviteName, inviteEmail, invitePass, selectedOrg.name, selectedOrg.features)
+
+      if (inviteType === "new") {
+        if (!inviteName || !inviteEmail || !invitePass) {
+          setErrorMsg("Please fill all fields")
+          return
+        }
+        await adminCreateUser(inviteName, inviteEmail, invitePass, selectedOrg.name, selectedOrg.features)
+      } else {
+        if (!existingAgentEmail) {
+          setErrorMsg("Please select an agent")
+          return
+        }
+        const res = await fetch("http://localhost:5000/api/agents/permissions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target_email: existingAgentEmail, category: selectedOrg.name, features: selectedOrg.features })
+        });
+        if (!res.ok) throw new Error("Failed to assign existing agent");
+      }
+
       setSuccess(true)
 
       // Opt: Increment local UI count
@@ -117,7 +190,7 @@ export default function Organization() {
         setSuccess(false)
       }, 2000)
     } catch (err: any) {
-      setErrorMsg(err.message || "Failed to create agent")
+      setErrorMsg(err.message || "Failed to add agent")
     } finally {
       setLoading(false)
     }
@@ -173,7 +246,7 @@ export default function Organization() {
 
                 <button
                   onClick={handleCreateOrg}
-                  disabled={!newOrgName.trim() || newOrgFeatures.length === 0}
+                  disabled={!newOrgName.trim()}
                   className="w-full h-12 bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white rounded-2xl font-bold shadow-lg shadow-[#25D366]/25 hover:shadow-[#25D366]/40 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 flex items-center justify-center gap-2"
                 >
                   <Plus size={18} />
@@ -329,6 +402,21 @@ export default function Organization() {
                 </button>
               </div>
 
+              <div className="flex border-b border-[var(--border)] px-6 pt-2 gap-6 bg-[var(--bg-hover)] mt-2">
+                <button
+                  onClick={() => setInviteType("existing")}
+                  className={`pb-3 text-sm font-bold capitalize transition-all border-b-2 ${inviteType === "existing" ? "border-[#25D366] text-[#25D366]" : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                >
+                  Existing Agent
+                </button>
+                <button
+                  onClick={() => setInviteType("new")}
+                  className={`pb-3 text-sm font-bold capitalize transition-all border-b-2 ${inviteType === "new" ? "border-[#25D366] text-[#25D366]" : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                >
+                  Provision New
+                </button>
+              </div>
+
               <div className="p-6 space-y-4">
                 {errorMsg && (
                   <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold">
@@ -336,35 +424,57 @@ export default function Organization() {
                   </div>
                 )}
 
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 block">Agent Name</label>
-                  <input
-                    value={inviteName}
-                    onChange={e => setInviteName(e.target.value)}
-                    placeholder="John Doe"
-                    className="w-full h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] text-sm outline-none focus:border-[#25D366]"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 block">Login Email (ID)</label>
-                  <input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={e => setInviteEmail(e.target.value)}
-                    placeholder="john@company.com"
-                    className="w-full h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] text-sm outline-none focus:border-[#25D366]"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 block">Secure Password</label>
-                  <input
-                    type="password"
-                    value={invitePass}
-                    onChange={e => setInvitePass(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] text-sm outline-none focus:border-[#25D366]"
-                  />
-                </div>
+                {inviteType === "existing" ? (
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 block">Select Agent</label>
+                    <div className="relative group">
+                      <select
+                        value={existingAgentEmail}
+                        onChange={(e) => setExistingAgentEmail(e.target.value)}
+                        className="w-full h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] text-sm outline-none focus:border-[#25D366] appearance-none cursor-pointer text-[var(--text-primary)]"
+                      >
+                        <option value="" disabled>Select an agent to add...</option>
+                        {allAgents.map(ag => (
+                          <option key={ag.email} value={ag.email}>
+                            {ag.email} (Currently: {ag.category})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 block">Agent Name</label>
+                      <input
+                        value={inviteName}
+                        onChange={e => setInviteName(e.target.value)}
+                        placeholder="John Doe"
+                        className="w-full h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] text-sm outline-none focus:border-[#25D366]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 block">Login Email (ID)</label>
+                      <input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={e => setInviteEmail(e.target.value)}
+                        placeholder="john@company.com"
+                        className="w-full h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] text-sm outline-none focus:border-[#25D366]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 block">Secure Password</label>
+                      <input
+                        type="password"
+                        value={invitePass}
+                        onChange={e => setInvitePass(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] text-sm outline-none focus:border-[#25D366]"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="pt-4 border-t border-[var(--border)] mt-6">
                   <button
@@ -380,12 +490,12 @@ export default function Organization() {
                     ) : success ? (
                       <>
                         <Check size={18} />
-                        Agent Provisioned Successfully
+                        Agent Assigned Successfully
                       </>
                     ) : (
                       <>
                         <UserPlus size={18} />
-                        Create Agent Account
+                        {inviteType === "new" ? "Create Agent Account" : "Assign Existing Agent"}
                       </>
                     )}
                   </button>
@@ -440,32 +550,25 @@ export default function Organization() {
                   <div className="space-y-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Current Team Members</p>
                     <div className="space-y-2">
-                      {/* Mock members since we aren't fetching directly from Express API yet */}
-                      <div className="flex items-center justify-between p-3.5 bg-[var(--bg-input)] rounded-2xl border border-[var(--border)] group">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full text-white flex items-center justify-center text-xs font-bold shadow-md">JD</div>
-                          <div>
-                            <div className="text-sm font-bold text-[var(--text-primary)]">John Doe</div>
-                            <div className="text-xs text-[var(--text-secondary)]">john@company.com</div>
+                      {orgMembers.length === 0 && (
+                        <div className="text-sm text-[var(--text-muted)] p-4 text-center">No members found. Use "Add Agent" to provision members into this organization.</div>
+                      )}
+                      {orgMembers.map(member => (
+                        <div key={member.email} className="flex items-center justify-between p-3.5 bg-[var(--bg-input)] rounded-2xl border border-[var(--border)] group">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full text-white flex items-center justify-center text-xs font-bold shadow-md">
+                              {member.email.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-[var(--text-primary)]">{member.email.split('@')[0]}</div>
+                              <div className="text-xs text-[var(--text-secondary)]">{member.email}</div>
+                            </div>
                           </div>
+                          <button onClick={() => removeMember(member.email)} className="text-red-500 bg-red-500/10 p-2 rounded-xl hover:bg-red-500 text-xs transition-colors hover:text-white opacity-0 group-hover:opacity-100 font-bold border border-red-500/20 flex items-center gap-1">
+                            <Trash2 size={13} /> Remove
+                          </button>
                         </div>
-                        <button className="text-red-500 bg-red-500/10 p-2 rounded-xl hover:bg-red-500 text-xs transition-colors hover:text-white opacity-0 group-hover:opacity-100 font-bold border border-red-500/20 flex items-center gap-1">
-                          <Trash2 size={13} /> Remove
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3.5 bg-[var(--bg-input)] rounded-2xl border border-[var(--border)] group">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full text-white flex items-center justify-center text-xs font-bold shadow-md">AS</div>
-                          <div>
-                            <div className="text-sm font-bold text-[var(--text-primary)]">Alice Smith</div>
-                            <div className="text-xs text-[var(--text-secondary)]">alice@company.com</div>
-                          </div>
-                        </div>
-                        <button className="text-red-500 bg-red-500/10 p-2 rounded-xl hover:bg-red-500 text-xs transition-colors hover:text-white opacity-0 group-hover:opacity-100 font-bold border border-red-500/20 flex items-center gap-1">
-                          <Trash2 size={13} /> Remove
-                        </button>
-                      </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -520,10 +623,11 @@ export default function Organization() {
                       <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 block">Rename Category</label>
                       <div className="flex gap-2">
                         <input
-                          defaultValue={selectedOrg.name}
+                          value={selectedOrg?.name || ""}
+                          onChange={(e) => setSelectedOrg(prev => prev ? { ...prev, name: e.target.value } : prev)}
                           className="flex-1 h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] font-medium text-sm outline-none focus:border-[#25D366]"
                         />
-                        <button className="h-11 px-4 bg-[#25D366] text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#22c55e]">
+                        <button onClick={handleUpdateOrg} className="h-11 px-4 bg-[#25D366] text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#22c55e]">
                           <Save size={16} /> Save
                         </button>
                       </div>
@@ -532,7 +636,7 @@ export default function Organization() {
                     <div className="pt-6 border-t border-[var(--border)]">
                       <h4 className="text-sm font-bold text-red-500 mb-1">Danger Zone</h4>
                       <p className="text-xs text-[var(--text-secondary)] mb-4">Permanently delete this organization. This removes the category. Agents may lose structured access.</p>
-                      <button className="w-full h-11 border-2 border-red-500/20 bg-red-500/5 text-red-500 font-bold rounded-xl text-sm hover:bg-red-500 hover:text-white transition-colors">
+                      <button onClick={() => handleDeleteOrg(selectedOrg.id)} className="w-full h-11 border-2 border-red-500/20 bg-red-500/5 text-red-500 font-bold rounded-xl text-sm hover:bg-red-500 hover:text-white transition-colors">
                         Delete Organization
                       </button>
                     </div>

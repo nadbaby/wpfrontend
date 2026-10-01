@@ -18,15 +18,15 @@ import {
 } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 
-const navItems = [
-  { path: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { path: "/chat", icon: MessageSquare, label: "WA Chat" },
-  { path: "/appearance", icon: Palette, label: "Chat Appearance" },
-  { path: "/templates", icon: FileText, label: "Message Templates" },
-  { path: "/media", icon: Image, label: "Media Library" },
-  { path: "/organization", icon: Users, label: "Organization" },
-  { path: "/agents", icon: UserCheck, label: "Agents" },
-  { path: "/broadcast", icon: Megaphone, label: "Broadcast" },
+const ALL_NAV_ITEMS = [
+  { path: "/", icon: LayoutDashboard, label: "Dashboard", adminOnly: true },
+  { path: "/chat", icon: MessageSquare, label: "WA Chat", feature: "send-messages" },
+  { path: "/appearance", icon: Palette, label: "Chat Appearance", adminOnly: true },
+  { path: "/templates", icon: FileText, label: "Message Templates", feature: "create-template" },
+  { path: "/media", icon: Image, label: "Media Library", adminOnly: true },
+  { path: "/organization", icon: Users, label: "Organization", adminOnly: true },
+  { path: "/agents", icon: UserCheck, label: "Agents", adminOnly: true },
+  { path: "/broadcast", icon: Megaphone, label: "Broadcast", feature: ["send-broadcasting", "schedule-broadcasting"] },
 ]
 
 const bottomItems = [
@@ -57,6 +57,20 @@ export default function Sidebar({
     navigate("/login")
   }
 
+  const isAdmin = user?.role === "Administrator" || user?.role === "Owner / Admin";
+
+  const visibleNavItems = ALL_NAV_ITEMS.filter(item => {
+    if (isAdmin) return true;
+    if (item.adminOnly) return false;
+    if (item.feature) {
+      if (Array.isArray(item.feature)) {
+        return item.feature.some(f => user?.features?.includes(f));
+      }
+      return user?.features?.includes(item.feature);
+    }
+    return true;
+  });
+
   return (
     <>
       {mobileOpen && (
@@ -78,9 +92,8 @@ export default function Sidebar({
       >
         {/* Logo */}
         <div
-          className={`flex items-center h-[64px] px-4 border-b border-[var(--border)] ${
-            collapsed ? "justify-center" : "gap-3"
-          }`}
+          className={`flex items-center h-[64px] px-4 border-b border-[var(--border)] ${collapsed ? "justify-center" : "gap-3"
+            }`}
         >
           <div className="w-9 h-9 rounded-xl bg-[#25D366] flex items-center justify-center flex-shrink-0">
             <Zap size={18} className="text-white" />
@@ -99,7 +112,7 @@ export default function Sidebar({
 
         {/* Nav */}
         <nav className="flex-1 py-3 overflow-y-auto">
-          {navItems.map(({ path, icon: Icon, label }) => {
+          {visibleNavItems.map(({ path, icon: Icon, label }) => {
             const isActive =
               path === "/"
                 ? location.pathname === "/"
@@ -113,10 +126,9 @@ export default function Sidebar({
                   relative flex items-center gap-3 mx-2 mb-0.5 rounded-xl
                   transition-all duration-150 group
                   ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
-                  ${
-                    isActive
-                      ? "bg-[var(--bg-active)] text-[#25D366]"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                  ${isActive
+                    ? "bg-[var(--bg-active)] text-[#25D366]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                   }
                 `}
                 title={collapsed ? label : undefined}
@@ -127,9 +139,8 @@ export default function Sidebar({
                 <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                 {!collapsed && (
                   <span
-                    className={`text-[13.5px] font-medium ${
-                      isActive ? "font-semibold" : ""
-                    }`}
+                    className={`text-[13.5px] font-medium ${isActive ? "font-semibold" : ""
+                      }`}
                   >
                     {label}
                   </span>
@@ -159,10 +170,9 @@ export default function Sidebar({
                   relative flex items-center gap-3 mx-2 mb-0.5 rounded-xl
                   transition-all duration-150 group
                   ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
-                  ${
-                    isActive
-                      ? "bg-[var(--bg-active)] text-[#25D366]"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                  ${isActive
+                    ? "bg-[var(--bg-active)] text-[#25D366]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                   }
                 `}
               >
@@ -191,10 +201,9 @@ export default function Sidebar({
                 relative flex items-center gap-3 mx-2 mt-2 rounded-xl
                 transition-all duration-150 group
                 ${collapsed ? "px-2.5 py-2.5 justify-center" : "px-3 py-2.5"}
-                ${
-                  location.pathname === "/login"
-                    ? "bg-[var(--bg-active)] text-[#25D366]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                ${location.pathname === "/login"
+                  ? "bg-[var(--bg-active)] text-[#25D366]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                 }
               `}
             >
@@ -240,9 +249,8 @@ export default function Sidebar({
 
         {/* User profile */}
         <div
-          className={`p-3 border-t border-[var(--border)] ${
-            collapsed ? "flex justify-center" : ""
-          }`}
+          className={`p-3 border-t border-[var(--border)] ${collapsed ? "flex justify-center" : ""
+            }`}
         >
           {isAuthenticated && user ? (
             collapsed ? (
