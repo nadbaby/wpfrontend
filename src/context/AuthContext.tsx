@@ -1,4 +1,4 @@
-﻿import API_BASE from "../lib/api";
+import API_BASE from "../lib/api";
 import {
   createContext,
   useContext,
@@ -178,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: string = "agent"
   ): Promise<boolean> => {
     try {
-      const response = await fetch(" + API_BASE + "/api/agents/provision", {
+      const response = await fetch(`${API_BASE}/api/agents/provision`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

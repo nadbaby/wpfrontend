@@ -62,7 +62,7 @@ export default function MediaLibrary() {
 
   const fetchMedia = async () => {
     try {
-      const res = await fetch(" + API_BASE + "/api/media");
+      const res = await fetch(`${API_BASE}/api/media`);
       if (res.ok) {
         const data = await res.json();
         setMediaList(data);
@@ -82,7 +82,7 @@ export default function MediaLibrary() {
       formData.append("media_file", files[i]);
 
       try {
-        const res = await fetch(" + API_BASE + "/api/media/upload", {
+        const res = await fetch(`${API_BASE}/api/media/upload`, {
           method: "POST",
           body: formData
         });

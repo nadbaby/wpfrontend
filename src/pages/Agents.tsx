@@ -43,7 +43,7 @@ export default function Agents() {
   const [statusFilter, setStatusFilter] = useState("All")
 
   useEffect(() => {
-    fetch(" + API_BASE + "/api/agents/all")
+    fetch(`${API_BASE}/api/agents/all`)
       .then(res => res.json())
       .then(data => {
         const dbAgents = data.map((user: any) => ({

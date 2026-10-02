@@ -41,7 +41,7 @@ export default function Organization() {
 
   const fetchOrgs = async () => {
     try {
-      const res = await fetch(" + API_BASE + "/api/orgs");
+      const res = await fetch(`${API_BASE}/api/orgs`);
       if (res.ok) setOrganizations(await res.json());
     } catch (e) { }
   };
@@ -120,7 +120,7 @@ export default function Organization() {
   const handleCreateOrg = async () => {
     if (!newOrgName.trim()) return;
     try {
-      const res = await fetch(" + API_BASE + "/api/orgs", {
+      const res = await fetch(`${API_BASE}/api/orgs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newOrgName, features: newOrgFeatures })
@@ -149,7 +149,7 @@ export default function Organization() {
     setInviteEmail("")
     setInvitePass("")
 
-    fetch(" + API_BASE + "/api/agents/all")
+    fetch(`${API_BASE}/api/agents/all`)
       .then(r => r.json())
       .then(data => setAllAgents(data || []))
       .catch(e => console.error(e));
@@ -173,7 +173,7 @@ export default function Organization() {
           setErrorMsg("Please select an agent")
           return
         }
-        const res = await fetch(" + API_BASE + "/api/agents/permissions", {
+        const res = await fetch(`${API_BASE}/api/agents/permissions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ target_email: existingAgentEmail, category: selectedOrg.name, features: selectedOrg.features })
