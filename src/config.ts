@@ -1,7 +1,7 @@
 // Central place for public (non-secret) runtime configuration.
 // Values can be overridden at build time via VITE_* env vars on Vercel.
-export const API_URL: string =
-  (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:5000";
+const rawApiUrl = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:5000";
+export const API_URL: string = rawApiUrl.replace(/\/+$/, "");
 
 export const NEON_AUTH_URL: string =
   (import.meta.env.VITE_NEON_AUTH_URL as string | undefined) ||
