@@ -6,11 +6,14 @@ import {
   useEffect,
   ReactNode,
 } from "react"
-import { createAuthClient } from "@neondatabase/auth";
-import { BetterAuthReactAdapter } from "@neondatabase/auth/react/adapters";
+import { createAuthClient } from "better-auth/react";
+import { adminClient } from "better-auth/client/plugins";
 
-export const authClient = createAuthClient(import.meta.env.VITE_NEON_AUTH_URL, {
-  adapter: BetterAuthReactAdapter(),
+export const authClient = createAuthClient({
+  baseURL: import.meta.env.VITE_BACKEND_URL, // points to our Express backend
+  plugins: [
+    adminClient()
+  ]
 });
 
 export interface User {
