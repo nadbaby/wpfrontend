@@ -467,17 +467,19 @@ export const WhatsAppPhoneMockup: React.FC<WhatsAppPhoneMockupProps> = ({
                 {/* Template Action Buttons (Quick Replies & CTA) */}
                 {buttons && buttons.length > 0 && (
                   <div
-                    className="border-t flex flex-col divide-y"
+                    className="border-t"
                     style={{
                       borderColor: isDark ? "#2a3942" : "#e9edef",
-                      divideColor: isDark ? "#2a3942" : "#e9edef",
                     }}
                   >
                     {buttons.map((btn, idx) => (
                       <div
                         key={idx}
                         className="py-2 px-3 text-center text-[11.5px] font-medium flex items-center justify-center gap-1.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                        style={{ color: "#00a884" }}
+                        style={{
+                          color: "#00a884",
+                          borderTop: idx > 0 ? `1px solid ${isDark ? "#2a3942" : "#e9edef"}` : undefined,
+                        }}
                       >
                         {btn.type === "url" && <ExternalLink size={12} />}
                         {btn.type === "phone" && <Phone size={12} />}

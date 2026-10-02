@@ -1,6 +1,6 @@
-﻿import { useState, useEffect } from "react"
-import API_BASE from "../lib/api"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { API_URL } from "../config"
 import {
   Plus,
   Shield,
@@ -41,7 +41,7 @@ export default function Organization() {
 
   const fetchOrgs = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/orgs`);
+      const res = await fetch(`${API_URL}/api/orgs`);
       if (res.ok) setOrganizations(await res.json());
     } catch (e) { }
   };
@@ -75,7 +75,7 @@ export default function Organization() {
 
   const fetchMembers = async (orgName: string) => {
     try {
-      const res = await fetch(`${API_BASE}/api/orgs/${encodeURIComponent(orgName)}/members`);
+      const res = await fetch(`${API_URL}/api/orgs/${encodeURIComponent(orgName)}/members`);
       if (res.ok) setOrgMembers(await res.json());
     } catch (err) { }
   }
@@ -88,24 +88,34 @@ export default function Organization() {
   }
 
   const removeMember = async (email: string) => {
-    await fetch(`${API_BASE}/api/orgs/members/${encodeURIComponent(email)}`, { method: "DELETE" });
+    await fetch(`${API_URL}/api/orgs/members/${encodeURIComponent(email)}`, { method: "DELETE" });
     setOrgMembers(prev => prev.filter(m => m.email !== email));
     fetchOrgs();
   }
 
+  const [isUpdatingOrg, setIsUpdatingOrg] = useState(false)
+  const [updateSuccess, setUpdateSuccess] = useState(false)
+
   const handleUpdateOrg = async () => {
     if (!selectedOrg) return;
-    await fetch(`${API_BASE}/api/orgs/${selectedOrg.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: selectedOrg.name, features: selectedOrg.features })
-    });
-    fetchOrgs(); // Refresh
+    setIsUpdatingOrg(true);
+    try {
+      await fetch(`${API_URL}/api/orgs/${selectedOrg.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: selectedOrg.name, features: selectedOrg.features })
+      });
+      await fetchOrgs(); // Refresh
+      setUpdateSuccess(true);
+      setTimeout(() => setUpdateSuccess(false), 2000);
+    } finally {
+      setIsUpdatingOrg(false);
+    }
   }
 
   const handleDeleteOrg = async (id: string) => {
     if (window.confirm("Delete this organization?")) {
-      await fetch(`${API_BASE}/api/orgs/${id}`, { method: "DELETE" });
+      await fetch(`${API_URL}/api/orgs/${id}`, { method: "DELETE" });
       setShowManageModal(false);
       fetchOrgs();
     }
@@ -120,7 +130,7 @@ export default function Organization() {
   const handleCreateOrg = async () => {
     if (!newOrgName.trim()) return;
     try {
-      const res = await fetch(`${API_BASE}/api/orgs`, {
+      const res = await fetch(`${API_URL}/api/orgs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newOrgName, features: newOrgFeatures })
@@ -149,7 +159,7 @@ export default function Organization() {
     setInviteEmail("")
     setInvitePass("")
 
-    fetch(`${API_BASE}/api/agents/all`)
+    fetch(`${API_URL}/api/agents/all`)
       .then(r => r.json())
       .then(data => setAllAgents(data || []))
       .catch(e => console.error(e));
@@ -173,7 +183,7 @@ export default function Organization() {
           setErrorMsg("Please select an agent")
           return
         }
-        const res = await fetch(`${API_BASE}/api/agents/permissions`, {
+        const res = await fetch(`${API_URL}/api/agents/permissions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ target_email: existingAgentEmail, category: selectedOrg.name, features: selectedOrg.features })
@@ -575,7 +585,7 @@ export default function Organization() {
                 )}
 
                 {manageTab === "permissions" && (
-                  <div className="space-y-4">
+                  <div className="space-y-4 flex flex-col">
                     <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">Category Feature Access</p>
                     <div className="grid grid-cols-1 gap-3">
                       {FEATURE_LIST.map(feat => {
@@ -615,6 +625,28 @@ export default function Organization() {
                         )
                       })}
                     </div>
+                    
+                    <div className="pt-4 border-t border-[var(--border)] mt-2">
+                       <button 
+                         onClick={handleUpdateOrg} 
+                         disabled={isUpdatingOrg || updateSuccess}
+                         className={`w-full h-11 shadow-md hover:shadow-lg text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+                           updateSuccess ? "bg-[#25D366]" : "bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 dark:from-white dark:to-gray-200 dark:text-black dark:hover:text-black"
+                         }`}
+                       >
+                         {isUpdatingOrg ? (
+                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                         ) : updateSuccess ? (
+                           <>
+                             <Check size={16} /> Saved!
+                           </>
+                         ) : (
+                           <>
+                             <Save size={16} /> Save Permissions
+                           </>
+                         )}
+                       </button>
+                    </div>
                   </div>
                 )}
 
@@ -628,8 +660,24 @@ export default function Organization() {
                           onChange={(e) => setSelectedOrg(prev => prev ? { ...prev, name: e.target.value } : prev)}
                           className="flex-1 h-11 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-input)] font-medium text-sm outline-none focus:border-[#25D366]"
                         />
-                        <button onClick={handleUpdateOrg} className="h-11 px-4 bg-[#25D366] text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#22c55e]">
-                          <Save size={16} /> Save
+                        <button 
+                          onClick={handleUpdateOrg} 
+                          disabled={isUpdatingOrg || updateSuccess}
+                          className={`h-11 px-4 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${
+                            updateSuccess ? "bg-[#25D366]" : "bg-[#25D366] hover:bg-[#22c55e]"
+                          }`}
+                        >
+                          {isUpdatingOrg ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : updateSuccess ? (
+                            <>
+                              <Check size={16} /> Saved
+                            </>
+                          ) : (
+                            <>
+                              <Save size={16} /> Save
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>
@@ -652,8 +700,3 @@ export default function Organization() {
     </div>
   )
 }
-
-
-
-
-

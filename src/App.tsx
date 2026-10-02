@@ -16,7 +16,7 @@ import Login from "./pages/Login"
 import { AuthProvider, useAuth } from "./context/AuthContext"
 import { ThemeProvider } from "./context/ThemeContext"
 
-const pageTitles: Record<string, { title: string subtitle?: string }> = {
+const pageTitles: Record<string, { title: string; subtitle?: string }> = {
   "/": { title: "Dashboard", subtitle: "Analytics & overview" },
   "/chat": { title: "WA Chat", subtitle: "Customer conversations" },
   "/appearance": { title: "Chat Appearance", subtitle: "Customize widget" },

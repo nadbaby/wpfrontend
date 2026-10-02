@@ -1,5 +1,5 @@
-﻿import { useState, useRef, useEffect } from "react"
-import API_BASE from "../lib/api"
+import { useState, useRef, useEffect } from "react"
+import { API_URL } from "../config"
 import {
   Upload,
   Search,
@@ -62,7 +62,7 @@ export default function MediaLibrary() {
 
   const fetchMedia = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/media`);
+      const res = await fetch(`${API_URL}/api/media`);
       if (res.ok) {
         const data = await res.json();
         setMediaList(data);
@@ -82,7 +82,7 @@ export default function MediaLibrary() {
       formData.append("media_file", files[i]);
 
       try {
-        const res = await fetch(`${API_BASE}/api/media/upload`, {
+        const res = await fetch(`${API_URL}/api/media/upload`, {
           method: "POST",
           body: formData
         });
@@ -103,7 +103,7 @@ export default function MediaLibrary() {
     e.stopPropagation();
     if (window.confirm("Are you sure you want to delete this media file?")) {
       try {
-        const res = await fetch(`${API_BASE}/api/media/${id}`, { method: "DELETE" });
+        const res = await fetch(`${API_URL}/api/media/${id}`, { method: "DELETE" });
         if (res.ok) {
           setMediaList(prev => prev.filter(m => m.id !== id));
           setSelected(prev => prev.filter(s => s !== id));
@@ -588,8 +588,3 @@ export default function MediaLibrary() {
     </div>
   )
 }
-
-
-
-
-
